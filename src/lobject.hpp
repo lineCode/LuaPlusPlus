@@ -62,30 +62,14 @@
 
 
 /*
-** Common type for all collectable objects
+** Common Header for all collectable objects (to be inherited by other objects)
 */
-struct GCObject;
-
-
-/*
-** Common Header for all collectable objects (in macro form, to be
-** included in other objects)
-*/
-struct CommonHeader
+struct GCObject
 {
   GCObject *next;
   uint8_t tt;
   uint8_t marked;
 };
-
-
-/*
-** Common type has only the common header
-*/
-struct GCObject : CommonHeader {};
-
-
-
 
 /*
 ** Tagged Values. This is the basic representation of values in Lua,
@@ -300,7 +284,7 @@ using StkId = TValue*;  /* index to stack elements */
 ** Header for string value; string bytes follow the end of this structure
 ** (aligned according to 'UTString'; see next).
 */
-struct TString : CommonHeader
+struct TString : GCObject
 {
   uint8_t extra;  /* reserved words for short strings; "has hash" for longs */
   uint8_t shrlen;  /* length for short strings */
@@ -343,7 +327,7 @@ union UTString {
 ** Header for userdata; memory area follows the end of this structure
 ** (aligned according to 'UUdata'; see next).
 */
-struct Udata : CommonHeader
+struct Udata : GCObject
 {
   uint8_t ttuv_;  /* user value's tag */
   struct Table *metatable;
@@ -404,7 +388,7 @@ struct LocVar {
 /*
 ** Function Prototypes
 */
-struct Proto : CommonHeader
+struct Proto : GCObject
 {
   uint8_t numparams;  /* number of fixed parameters */
   uint8_t is_vararg;
@@ -440,7 +424,7 @@ using UpVal = struct UpVal;
 ** Closures
 */
 
-struct ClosureHeader : CommonHeader
+struct ClosureHeader : GCObject
 {
 	uint8_t nupvalues;
   GCObject* gclist;
@@ -509,7 +493,7 @@ struct Node
 };
 
 
-struct Table : CommonHeader
+struct Table : GCObject
 {
   uint8_t flags;  /* 1<<p means tagmethod(p) is not present */
   uint8_t lsizenode;  /* log2 of size of 'node' array */

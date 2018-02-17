@@ -153,7 +153,7 @@ typedef struct global_State {
 /*
 ** 'per thread' state
 */
-struct lua_State : CommonHeader
+struct lua_State : GCObject
 {
   unsigned short nci;  /* number of items in 'ci' list */
   uint8_t status;
@@ -183,38 +183,20 @@ struct lua_State : CommonHeader
 #define G(L)	(L->l_G)
 
 
-/*
-** Union of all collectable objects (only for conversions)
-*/
-union GCUnion {
-  GCObject gc;  /* common header */
-  struct TString ts;
-  struct Udata u;
-  union Closure cl;
-  struct Table h;
-  struct Proto p;
-  struct lua_State th;  /* thread */
-};
-
-
-#define cast_u(o)	cast(union GCUnion *, (o))
-
 /* macros to convert a GCObject into a specific value */
-#define gco2ts(o)  \
-	check_exp(novariant((o)->tt) == LUA_TSTRING, &((cast_u(o))->ts))
-#define gco2u(o)  check_exp((o)->tt == LUA_TUSERDATA, &((cast_u(o))->u))
-#define gco2lcl(o)  check_exp((o)->tt == LUA_TLCL, &((cast_u(o))->cl.l))
-#define gco2ccl(o)  check_exp((o)->tt == LUA_TCCL, &((cast_u(o))->cl.c))
-#define gco2cl(o)  \
-	check_exp(novariant((o)->tt) == LUA_TFUNCTION, &((cast_u(o))->cl))
-#define gco2t(o)  check_exp((o)->tt == LUA_TTABLE, &((cast_u(o))->h))
-#define gco2p(o)  check_exp((o)->tt == LUA_TPROTO, &((cast_u(o))->p))
-#define gco2th(o)  check_exp((o)->tt == LUA_TTHREAD, &((cast_u(o))->th))
+#define gco2ts(o) check_exp(novariant((o)->tt) == LUA_TSTRING, static_cast<TString*>(o))
+#define gco2u(o)  check_exp((o)->tt == LUA_TUSERDATA, static_cast<Udata*>(o))
+#define gco2lcl(o)  check_exp((o)->tt == LUA_TLCL, static_cast<LClosure*>(o))
+#define gco2ccl(o)  check_exp((o)->tt == LUA_TCCL, static_cast<CClosure*>(o))
+#define gco2cl(o)  check_exp(novariant((o)->tt) == LUA_TFUNCTION, reinterpret_cast<Closure*>(o))
+#define gco2t(o)  check_exp((o)->tt == LUA_TTABLE, static_cast<Table*>(o))
+#define gco2p(o)  check_exp((o)->tt == LUA_TPROTO, static_cast<Proto*>(o))
+#define gco2th(o)  check_exp((o)->tt == LUA_TTHREAD, static_cast<lua_State*>(o))
 
 
 /* macro to convert a Lua object into a GCObject */
 #define obj2gco(v) \
-	check_exp(novariant((v)->tt) < LUA_TDEADKEY, (&(cast_u(v)->gc)))
+	check_exp(novariant((v)->tt) < LUA_TDEADKEY, (static_cast<GCObject*>(v)))
 
 
 /* actual number of total bytes allocated */
