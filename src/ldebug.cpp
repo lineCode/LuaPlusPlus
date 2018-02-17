@@ -30,9 +30,6 @@
 
 
 
-#define noLuaClosure(f)		((f) == NULL || (f)->c.tt == LUA_TCCL)
-
-
 /* Active Lua function (given call info) */
 #define ci_func(ci)		(clLvalue((ci)->func))
 
@@ -206,8 +203,18 @@ LUA_API const char *lua_setlocal (lua_State *L, const lua_Debug *ar, int n) {
   return name;
 }
 
+struct Closure
+{
+  CClosure* cClosure = nullptr;
+  LClosure* lClosure = nullptr;
+};
 
-static void funcinfo (lua_Debug *ar, Closure *cl) {
+static bool noLuaClosure(const Closure& closure)
+{
+  return closure.cClosure || !closure.lClosure;
+}
+
+static void funcinfo (lua_Debug *ar, Closure cl) {
   if (noLuaClosure(cl)) {
     ar->source = "=[C]";
     ar->linedefined = -1;
@@ -215,7 +222,7 @@ static void funcinfo (lua_Debug *ar, Closure *cl) {
     ar->what = "C";
   }
   else {
-    Proto *p = cl->l.p;
+    Proto *p = cl.lClosure->p;
     ar->source = p->source ? getstr(p->source) : "=?";
     ar->linedefined = p->linedefined;
     ar->lastlinedefined = p->lastlinedefined;
@@ -225,7 +232,7 @@ static void funcinfo (lua_Debug *ar, Closure *cl) {
 }
 
 
-static void collectvalidlines (lua_State *L, Closure *f) {
+static void collectvalidlines (lua_State *L, Closure f) {
   if (noLuaClosure(f)) {
     setnilvalue(L->top);
     api_incr_top(L);
@@ -233,12 +240,12 @@ static void collectvalidlines (lua_State *L, Closure *f) {
   else {
     int i;
     TValue v;
-    int *lineinfo = f->l.p->lineinfo;
+    int *lineinfo = f.lClosure->p->lineinfo;
     Table *t = luaH_new(L);  /* new table to store active lines */
     sethvalue(L, L->top, t);  /* push it on stack */
     api_incr_top(L);
     setbvalue(&v, 1);  /* boolean 'true' to be the value of all indices */
-    for (i = 0; i < f->l.p->sizelineinfo; i++)  /* for all lines with code */
+    for (i = 0; i < f.lClosure->p->sizelineinfo; i++)  /* for all lines with code */
       luaH_setint(L, t, lineinfo[i], &v);  /* table[line] = true */
   }
 }
@@ -259,7 +266,7 @@ static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name) {
 
 
 static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
-                       Closure *f, CallInfo *ci) {
+                       Closure f, CallInfo *ci) {
   int status = 1;
   for (; *what; what++) {
     switch (*what) {
@@ -272,14 +279,15 @@ static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
         break;
       }
       case 'u': {
-        ar->nups = (f == NULL) ? 0 : f->c.nupvalues;
         if (noLuaClosure(f)) {
+          ar->nups = f.cClosure ? f.cClosure->nupvalues : 0;
           ar->isvararg = 1;
           ar->nparams = 0;
         }
         else {
-          ar->isvararg = f->l.p->is_vararg;
-          ar->nparams = f->l.p->numparams;
+          ar->nups = f.lClosure->nupvalues;
+          ar->isvararg = f.lClosure->p->is_vararg;
+          ar->nparams = f.lClosure->p->numparams;
         }
         break;
       }
@@ -307,7 +315,7 @@ static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
 
 LUA_API int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar) {
   int status;
-  Closure *cl;
+  Closure cl;
   CallInfo *ci;
   StkId func;
   lua_lock(L);
@@ -324,7 +332,10 @@ LUA_API int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar) {
     func = ci->func;
     lua_assert(ttisfunction(ci->func));
   }
-  cl = ttisclosure(func) ? clvalue(func) : NULL;
+  if (ttisCclosure(func))
+    cl.cClosure = clCvalue(func);
+  else if (ttisLclosure(func))
+    cl.lClosure = clLvalue(func);
   status = auxgetinfo(L, what, ar, cl, ci);
   if (strchr(what, 'f')) {
     setobjs2s(L, L->top, func);

@@ -152,7 +152,6 @@ struct TValue
 #define pvalue(o)	check_exp(ttislightuserdata(o), val_(o).p)
 #define tsvalue(o)	check_exp(ttisstring(o), gco2ts(val_(o).gc))
 #define uvalue(o)	check_exp(ttisfulluserdata(o), gco2u(val_(o).gc))
-#define clvalue(o)	check_exp(ttisclosure(o), gco2cl(val_(o).gc))
 #define clLvalue(o)	check_exp(ttisLclosure(o), gco2lcl(val_(o).gc))
 #define clCvalue(o)	check_exp(ttisCclosure(o), gco2ccl(val_(o).gc))
 #define fvalue(o)	check_exp(ttislcf(o), val_(o).f)
@@ -452,12 +451,6 @@ static size_t sizeLClosure(int32_t upvalues)
 {
   return sizeof(LClosure) + (sizeof(TValue*) * (upvalues - 1));
 }
-
-union Closure
-{
-  CClosure c;
-  LClosure l;
-};
 
 #define isLfunction(o)	ttisLclosure(o)
 

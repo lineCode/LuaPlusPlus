@@ -188,7 +188,6 @@ struct lua_State : GCObject
 #define gco2u(o)  check_exp((o)->tt == LUA_TUSERDATA, static_cast<Udata*>(o))
 #define gco2lcl(o)  check_exp((o)->tt == LUA_TLCL, static_cast<LClosure*>(o))
 #define gco2ccl(o)  check_exp((o)->tt == LUA_TCCL, static_cast<CClosure*>(o))
-#define gco2cl(o)  check_exp(novariant((o)->tt) == LUA_TFUNCTION, reinterpret_cast<Closure*>(o))
 #define gco2t(o)  check_exp((o)->tt == LUA_TTABLE, static_cast<Table*>(o))
 #define gco2p(o)  check_exp((o)->tt == LUA_TPROTO, static_cast<Proto*>(o))
 #define gco2th(o)  check_exp((o)->tt == LUA_TTHREAD, static_cast<lua_State*>(o))
