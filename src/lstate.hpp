@@ -113,7 +113,6 @@ struct CallInfo
 #define setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
 #define getoah(st)	((st) & CIST_OAH)
 
-
 /*
 ** 'global state', shared by all threads of this state
 */
@@ -154,11 +153,11 @@ struct global_State
   const lua_Number *version;  /* pointer to version number */
   TString *memerrmsg;  /* memory-error message */
   TString *tmname[TM_N];  /* array with tag-method names */
-  struct Table *mt[LUA_NUMTAGS];  /* metatables for basic types */
+  struct Table* mt[LUA_NUMTAGS];  /* metatables for basic types */
   TString *strcache[STRCACHE_N][STRCACHE_M];  /* cache for strings in API */
 };
 
-
+struct lua_MainThread;
 /*
 ** 'per thread' state
 */
@@ -168,6 +167,7 @@ struct lua_State : GCObject
   uint8_t status;
   StkId top;  /* first free slot in the stack */
   global_State* globalState;
+  lua_MainThread* mainThread;
   CallInfo *ci;  /* call info for current function */
   const Instruction *oldpc;  /* last pc traced */
   StkId stack_last;  /* last free slot in the stack */
@@ -186,6 +186,15 @@ struct lua_State : GCObject
   unsigned short nCcalls;  /* number of nested C calls */
   l_signalT hookmask;
   uint8_t allowhook;
+};
+
+/*
+** Main thread combines a thread state and the global state
+*/
+struct lua_MainThread
+{
+  lua_State state;
+  global_State global;
 };
 
 

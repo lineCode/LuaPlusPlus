@@ -435,14 +435,6 @@ using LUA_UNSIGNED = unsigned long long;
 
 
 /*
-@@ LUA_EXTRASPACE defines the size of a raw memory area associated with
-** a Lua state with very fast access.
-** CHANGE it if you need a different size.
-*/
-#define LUA_EXTRASPACE		(sizeof(void *))
-
-
-/*
 @@ LUA_IDSIZE gives the maximum size for the description of the source
 @@ of a function in debug information.
 ** CHANGE it if you want a different size.
