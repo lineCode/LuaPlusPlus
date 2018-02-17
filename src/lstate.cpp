@@ -100,7 +100,7 @@ static uint32_t makeseed(lua_State* L)
 ** invariant (and avoiding underflows in 'totalbytes')
 */
 void luaE_setdebt (global_State *g, l_mem debt) {
-  l_mem tb = gettotalbytes(g);
+  l_mem tb = g->getTotalBytes();
   lua_assert(tb > 0);
   if (debt < tb - MAX_LMEM)
     debt = tb - MAX_LMEM;  /* will make 'totalbytes == MAX_LMEM' */
@@ -252,7 +252,7 @@ static void close_state (lua_State *L) {
     luai_userstateclose(L);
   luaM_freearray(L, L->globalState->strt.hash, L->globalState->strt.size);
   freestack(L);
-  lua_assert(gettotalbytes(g) == sizeof(LG));
+  lua_assert(g->getTotalBytes() == sizeof(LG));
   (*g->frealloc)(g->ud, fromstate(L), sizeof(LG), 0);  /* free main block */
 }
 

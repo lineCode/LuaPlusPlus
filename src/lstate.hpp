@@ -119,6 +119,9 @@ struct CallInfo
 */
 struct global_State
 {
+  /* actual number of total bytes allocated */
+  lu_mem getTotalBytes() const { return this->totalbytes + this->GCdebt; }
+
   lua_Alloc frealloc;  /* function to reallocate memory */
   void *ud;         /* auxiliary data to 'frealloc' */
   l_mem totalbytes;  /* number of bytes currently allocated - GCdebt */
@@ -199,10 +202,6 @@ struct lua_State : GCObject
 /* macro to convert a Lua object into a GCObject */
 #define obj2gco(v) \
 	check_exp(novariant((v)->tt) < LUA_TDEADKEY, (static_cast<GCObject*>(v)))
-
-
-/* actual number of total bytes allocated */
-#define gettotalbytes(g)	cast(lu_mem, (g)->totalbytes + (g)->GCdebt)
 
 LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
 LUAI_FUNC void luaE_freethread (lua_State *L, lua_State *L1);

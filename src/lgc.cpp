@@ -940,7 +940,7 @@ static void setpause (global_State *g) {
   threshold = (g->gcpause < MAX_LMEM / estimate)  /* overflow? */
             ? estimate * g->gcpause  /* no overflow */
             : MAX_LMEM;  /* overflow; truncate to maximum */
-  debt = gettotalbytes(g) - threshold;
+  debt = g->getTotalBytes() - threshold;
   luaE_setdebt(g, debt);
 }
 
@@ -1060,7 +1060,7 @@ static lu_mem singlestep (lua_State *L) {
       propagateall(g);  /* make sure gray list is empty */
       work = atomic(L);  /* work is what was traversed by 'atomic' */
       entersweep(L);
-      g->GCestimate = gettotalbytes(g);  /* first estimate */;
+      g->GCestimate = g->getTotalBytes();  /* first estimate */;
       return work;
     }
     case GCSswpallgc: {  /* sweep "regular" objects */
@@ -1164,7 +1164,7 @@ void luaC_fullgc (lua_State *L, int isemergency) {
   luaC_runtilstate(L, ~bitmask(GCSpause));  /* start new collection */
   luaC_runtilstate(L, bitmask(GCScallfin));  /* run up to finalizers */
   /* estimate must be correct after a full GC cycle */
-  lua_assert(g->GCestimate == gettotalbytes(g));
+  lua_assert(g->GCestimate == g->getTotalBytes());
   luaC_runtilstate(L, bitmask(GCSpause));  /* finish collection */
   g->gckind = KGC_NORMAL;
   setpause(g);
