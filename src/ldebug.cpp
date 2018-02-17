@@ -540,7 +540,7 @@ static const char *funcnamefromcode (lua_State *L, CallInfo *ci,
     default:
       return NULL;  /* cannot find a reasonable name */
   }
-  *name = getstr(G(L)->tmname[tm]);
+  *name = getstr(L->globalState->tmname[tm]);
   return "metamethod";
 }
 

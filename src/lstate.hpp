@@ -51,11 +51,12 @@ struct lua_longjmp;  /* defined in ldo.c */
 #define KGC_EMERGENCY	1	/* gc was forced by an allocation failure */
 
 
-typedef struct stringtable {
+struct stringtable
+{
   TString **hash;
   int nuse;  /* number of elements */
   int size;
-} stringtable;
+};
 
 
 /*
@@ -67,16 +68,20 @@ typedef struct stringtable {
 ** the function index so that, in case of errors, the continuation
 ** function can be called with the correct top.
 */
-typedef struct CallInfo {
+struct CallInfo
+{
   StkId func;  /* function index in the stack */
   StkId	top;  /* top for this function */
   struct CallInfo *previous, *next;  /* dynamic call link */
-  union {
-    struct {  /* only for Lua functions */
+  union
+  {
+    struct
+    {  /* only for Lua functions */
       StkId base;  /* base for this function */
       const Instruction *savedpc;
     } l;
-    struct {  /* only for C functions */
+    struct
+    {  /* only for C functions */
       lua_KFunction k;  /* continuation in case of yields */
       ptrdiff_t old_errfunc;
       lua_KContext ctx;  /* context info. in case of yields */
@@ -85,7 +90,7 @@ typedef struct CallInfo {
   ptrdiff_t extra;
   short nresults;  /* expected number of results from this function */
   unsigned short callstatus;
-} CallInfo;
+};
 
 
 /*
@@ -112,7 +117,8 @@ typedef struct CallInfo {
 /*
 ** 'global state', shared by all threads of this state
 */
-typedef struct global_State {
+struct global_State
+{
   lua_Alloc frealloc;  /* function to reallocate memory */
   void *ud;         /* auxiliary data to 'frealloc' */
   l_mem totalbytes;  /* number of bytes currently allocated - GCdebt */
@@ -147,7 +153,7 @@ typedef struct global_State {
   TString *tmname[TM_N];  /* array with tag-method names */
   struct Table *mt[LUA_NUMTAGS];  /* metatables for basic types */
   TString *strcache[STRCACHE_N][STRCACHE_M];  /* cache for strings in API */
-} global_State;
+};
 
 
 /*
@@ -158,7 +164,7 @@ struct lua_State : GCObject
   unsigned short nci;  /* number of items in 'ci' list */
   uint8_t status;
   StkId top;  /* first free slot in the stack */
-  global_State *l_G;
+  global_State* globalState;
   CallInfo *ci;  /* call info for current function */
   const Instruction *oldpc;  /* last pc traced */
   StkId stack_last;  /* last free slot in the stack */
@@ -178,9 +184,6 @@ struct lua_State : GCObject
   l_signalT hookmask;
   uint8_t allowhook;
 };
-
-
-#define G(L)	(L->l_G)
 
 
 /* macros to convert a GCObject into a specific value */

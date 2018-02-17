@@ -150,7 +150,7 @@ static int iscleared (global_State *g, const TValue *o) {
 ** same object.)
 */
 void luaC_barrier_ (lua_State *L, GCObject *o, GCObject *v) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   lua_assert(isblack(o) && iswhite(v) && !isdead(g, v) && !isdead(g, o));
   if (keepinvariant(g))  /* must keep invariant? */
     reallymarkobject(g, v);  /* restore invariant */
@@ -166,7 +166,7 @@ void luaC_barrier_ (lua_State *L, GCObject *o, GCObject *v) {
 ** pointing to a white object as gray again.
 */
 void luaC_barrierback_ (lua_State *L, Table *t) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   lua_assert(isblack(t) && !isdead(g, t));
   black2gray(t);  /* make table gray (again) */
   linkgclist(t, g->grayagain);
@@ -180,7 +180,7 @@ void luaC_barrierback_ (lua_State *L, Table *t) {
 ** must be marked.
 */
 void luaC_upvalbarrier_ (lua_State *L, UpVal *uv) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   GCObject *o = gcvalue(uv->v);
   lua_assert(!upisopen(uv));  /* ensured by macro luaC_upvalbarrier */
   if (keepinvariant(g))
@@ -189,7 +189,7 @@ void luaC_upvalbarrier_ (lua_State *L, UpVal *uv) {
 
 
 void luaC_fix (lua_State *L, GCObject *o) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   lua_assert(g->allgc == o);  /* object must be 1st in 'allgc' list! */
   white2gray(o);  /* they will be gray forever */
   g->allgc = o->next;  /* remove object from 'allgc' list */
@@ -203,7 +203,7 @@ void luaC_fix (lua_State *L, GCObject *o) {
 ** it to 'allgc' list.
 */
 GCObject *luaC_newobj (lua_State *L, int tt, size_t sz) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   GCObject *o = cast(GCObject *, luaM_newobject(L, novariant(tt), sz));
   o->marked = luaC_white(g);
   o->tt = tt;
@@ -729,7 +729,7 @@ static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count);
 ** list is finished.
 */
 static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   int ow = otherwhite(g);
   int white = luaC_white(g);  /* current white */
   while (*p != NULL && count-- > 0) {
@@ -801,7 +801,7 @@ static void dothecall (lua_State *L, void *ud) {
 
 
 static void GCTM (lua_State *L, int propagateerrors) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   const TValue *tm;
   TValue v;
   setgcovalue(L, &v, udata2finalize(g));
@@ -838,7 +838,7 @@ static void GCTM (lua_State *L, int propagateerrors) {
 ** call a few (up to 'g->gcfinnum') finalizers
 */
 static int runafewfinalizers (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   unsigned int i;
   lua_assert(!g->tobefnz || g->gcfinnum > 0);
   for (i = 0; g->tobefnz && i < g->gcfinnum; i++)
@@ -853,7 +853,7 @@ static int runafewfinalizers (lua_State *L) {
 ** call all pending finalizers
 */
 static void callallpendingfinalizers (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   while (g->tobefnz)
     GCTM(L, 0);
 }
@@ -896,7 +896,7 @@ static void separatetobefnz (global_State *g, int all) {
 ** search the list to find it) and link it in 'finobj' list.
 */
 void luaC_checkfinalizer (lua_State *L, GCObject *o, Table *mt) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   if (tofinalize(o) ||                 /* obj. is already marked... */
       gfasttm(g, mt, TM_GC) == NULL)   /* or has no finalizer? */
     return;  /* nothing to be done */
@@ -953,7 +953,7 @@ static void setpause (global_State *g) {
 ** real sweep.
 */
 static void entersweep (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   g->gcstate = GCSswpallgc;
   lua_assert(g->sweepgc == NULL);
   g->sweepgc = sweeplist(L, &g->allgc, 1);
@@ -961,7 +961,7 @@ static void entersweep (lua_State *L) {
 
 
 void luaC_freeallobjects (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   separatetobefnz(g, 1);  /* separate all objects with finalizers */
   lua_assert(g->finobj == NULL);
   callallpendingfinalizers(L);
@@ -976,7 +976,7 @@ void luaC_freeallobjects (lua_State *L) {
 
 
 static l_mem atomic (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   l_mem work;
   GCObject *origweak, *origall;
   GCObject *grayagain = g->grayagain;  /* save original list */
@@ -1039,7 +1039,7 @@ static lu_mem sweepstep (lua_State *L, global_State *g,
 
 
 static lu_mem singlestep (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   switch (g->gcstate) {
     case GCSpause: {
       g->GCmemtrav = g->strt.size * sizeof(GCObject*);
@@ -1098,7 +1098,7 @@ static lu_mem singlestep (lua_State *L) {
 ** by 'statemask'
 */
 void luaC_runtilstate (lua_State *L, int statesmask) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   while (!testbit(statesmask, g->gcstate))
     singlestep(L);
 }
@@ -1123,7 +1123,7 @@ static l_mem getdebt (global_State *g) {
 ** performs a basic GC step when collector is running
 */
 void luaC_step (lua_State *L) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   l_mem debt = getdebt(g);  /* GC deficit (be paid now) */
   if (!g->gcrunning) {  /* not running? */
     luaE_setdebt(g, -GCSTEPSIZE * 10);  /* avoid being called too often */
@@ -1153,7 +1153,7 @@ void luaC_step (lua_State *L) {
 ** changed, nothing will be collected).
 */
 void luaC_fullgc (lua_State *L, int isemergency) {
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   lua_assert(g->gckind == KGC_NORMAL);
   if (isemergency) g->gckind = KGC_EMERGENCY;  /* set flag */
   if (keepinvariant(g)) {  /* black objects? */

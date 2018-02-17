@@ -75,7 +75,7 @@ void luaM_toobig (lua_State *L) {
 */
 void *luaM_realloc_ (lua_State *L, void *block, size_t osize, size_t nsize) {
   void *newblock;
-  global_State *g = G(L);
+  global_State *g = L->globalState;
   size_t realosize = (block) ? osize : 0;
   lua_assert((realosize == 0) == (block == NULL));
 #if defined(HARDMEMTESTS)
