@@ -458,10 +458,9 @@ typedef struct UBox {
 
 
 static void *resizebox (lua_State *L, int idx, size_t newsize) {
-  void *ud;
-  lua_Alloc allocf = lua_getallocf(L, &ud);
+  lua_Alloc allocf = lua_getallocf(L);
   UBox *box = (UBox *)lua_touserdata(L, idx);
-  void *temp = allocf(ud, box->box, box->bsize, newsize);
+  void *temp = allocf(box->box, box->bsize, newsize);
   if (temp == NULL && newsize > 0) {  /* allocation error? */
     resizebox(L, idx, 0);  /* free buffer */
     luaL_error(L, "not enough memory for buffer allocation");
@@ -922,8 +921,8 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
 }
 
 
-static void *l_alloc (void *ud, void *ptr, size_t osize, size_t nsize) {
-  (void)ud; (void)osize;  /* not used */
+static void *l_alloc (void *ptr, size_t osize, size_t nsize) {
+  (void)osize;  /* not used */
   if (nsize == 0) {
     free(ptr);
     return NULL;
@@ -941,7 +940,7 @@ static int panic (lua_State *L) {
 
 
 LUALIB_API lua_State *luaL_newstate (void) {
-  lua_State *L = lua_newstate(l_alloc, NULL);
+  lua_State *L = lua_newstate(l_alloc);
   if (L) lua_atpanic(L, &panic);
   return L;
 }

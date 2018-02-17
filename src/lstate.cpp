@@ -231,7 +231,7 @@ static void close_state (lua_State* L)
   luaM_freearray(L, L->globalState->strt.hash, L->globalState->strt.size);
   freestack(L);
   lua_assert(g->getTotalBytes() == sizeof(lua_MainThread));
-  (*g->frealloc)(g->ud, L->mainThread, sizeof(lua_MainThread), 0);  /* free main block */
+  (*g->frealloc)(L->mainThread, sizeof(lua_MainThread), 0);  /* free main block */
 }
 
 
@@ -273,9 +273,9 @@ void luaE_freethread (lua_State *L, lua_State *L1)
 }
 
 
-LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud)
+LUA_API lua_State *lua_newstate (lua_Alloc f)
 {
-  lua_MainThread* mainThread = cast(lua_MainThread*, (*f)(ud, NULL, LUA_TTHREAD, sizeof(lua_MainThread)));
+  lua_MainThread* mainThread = cast(lua_MainThread*, (*f)(nullptr, LUA_TTHREAD, sizeof(lua_MainThread)));
   if (mainThread == nullptr)
     return nullptr;
 
@@ -288,7 +288,6 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud)
   L->marked = luaC_white(g);
   preinit_thread(L, g);
   g->frealloc = f;
-  g->ud = ud;
   g->mainthread = L;
   g->seed = makeseed(L);
   g->gcrunning = 0;  /* no GC while building state */

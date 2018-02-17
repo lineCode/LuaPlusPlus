@@ -1158,19 +1158,19 @@ LUA_API void lua_len (lua_State *L, int idx) {
 }
 
 
-LUA_API lua_Alloc lua_getallocf (lua_State *L, void **ud) {
+LUA_API lua_Alloc lua_getallocf (lua_State *L)
+{
   lua_Alloc f;
   lua_lock(L);
-  if (ud) *ud = L->globalState->ud;
   f = L->globalState->frealloc;
   lua_unlock(L);
   return f;
 }
 
 
-LUA_API void lua_setallocf (lua_State *L, lua_Alloc f, void *ud) {
+LUA_API void lua_setallocf (lua_State *L, lua_Alloc f)
+{
   lua_lock(L);
-  L->globalState->ud = ud;
   L->globalState->frealloc = f;
   lua_unlock(L);
 }
