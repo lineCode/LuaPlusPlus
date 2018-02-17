@@ -63,6 +63,10 @@ union L_Umaxalign
 };
 #endif
 
+#if !defined(lua_assert) && defined(DEBUG)
+#define lua_assert assert
+#endif
+
 /* internal assertions for in-house debugging */
 #if defined(lua_assert)
 #define check_exp(c,e)		(lua_assert(c), (e))
