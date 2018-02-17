@@ -7,7 +7,7 @@
 #define ltable_c
 #define LUA_CORE
 
-#include <lprefix.hpp>
+#include "lprefix.hpp"
 
 
 /*
@@ -23,11 +23,9 @@
 ** Hence even when the load factor reaches 100%, performance remains good.
 */
 
-#include <math.h>
-#include <limits.h>
-
+#include <cmath>
+#include <climits>
 #include <lua.hpp>
-
 #include <ldebug.hpp>
 #include <ldo.hpp>
 #include <lgc.hpp>

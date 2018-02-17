@@ -10,7 +10,7 @@
 #include <lprefix.hpp>
 
 
-#include <stddef.h>
+#include <cstddef>
 
 #include <lua.hpp>
 
@@ -50,7 +50,7 @@ static void DumpBlock (const void *b, size_t size, DumpState *D) {
 
 
 static void DumpByte (int y, DumpState *D) {
-  lu_byte x = (lu_byte)y;
+  uint8_t x = (uint8_t)y;
   DumpVar(x, D);
 }
 

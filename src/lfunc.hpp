@@ -1,21 +1,11 @@
+#pragma once
 /*
 ** $Id: lfunc.h,v 2.15 2015/01/13 15:49:11 roberto Exp $
 ** Auxiliary functions to manipulate prototypes and closures
 ** See Copyright Notice in lua.h
 */
 
-#ifndef lfunc_h
-#define lfunc_h
-
-
 #include <lobject.hpp>
-
-
-#define sizeCclosure(n)	(cast(int, sizeof(CClosure)) + \
-                         cast(int, sizeof(TValue)*((n)-1)))
-
-#define sizeLclosure(n)	(cast(int, sizeof(LClosure)) + \
-                         cast(int, sizeof(TValue *)*((n)-1)))
 
 
 /* test whether thread is in 'twups' list */
@@ -56,6 +46,3 @@ LUAI_FUNC void luaF_close (lua_State *L, StkId level);
 LUAI_FUNC void luaF_freeproto (lua_State *L, Proto *f);
 LUAI_FUNC const char *luaF_getlocalname (const Proto *func, int local_number,
                                          int pc);
-
-
-#endif

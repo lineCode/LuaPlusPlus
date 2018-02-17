@@ -10,10 +10,9 @@
 #include <lprefix.hpp>
 
 
-#include <string.h>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <llimits.hpp>
 #include <lmem.hpp>
 #include <lstate.hpp>

@@ -1,11 +1,9 @@
+#pragma once
 /*
 ** $Id: lopcodes.h,v 1.149 2016/07/19 17:12:21 roberto Exp $
 ** Opcodes for Lua virtual machine
 ** See Copyright Notice in lua.h
 */
-
-#ifndef lopcodes_h
-#define lopcodes_h
 
 #include <llimits.hpp>
 
@@ -56,19 +54,10 @@ enum OpMode {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 ** we use (signed) int to manipulate most arguments,
 ** so they must fit in LUAI_BITSINT-1 bits (-1 for sign)
 */
-#if SIZE_Bx < LUAI_BITSINT-1
 #define MAXARG_Bx        ((1<<SIZE_Bx)-1)
-#define MAXARG_sBx        (MAXARG_Bx>>1)         /* 'sBx' is signed */
-#else
-#define MAXARG_Bx        MAX_INT
-#define MAXARG_sBx        MAX_INT
-#endif
+#define MAXARG_sBx        (MAXARG_Bx>>1)
 
-#if SIZE_Ax < LUAI_BITSINT-1
 #define MAXARG_Ax	((1<<SIZE_Ax)-1)
-#else
-#define MAXARG_Ax	MAX_INT
-#endif
 
 
 #define MAXARG_A        ((1<<SIZE_A)-1)
@@ -278,7 +267,7 @@ enum OpArgMask {
   OpArgK   /* argument is a constant or register/constant */
 };
 
-LUAI_DDEC const lu_byte luaP_opmodes[NUM_OPCODES];
+LUAI_DDEC const uint8_t luaP_opmodes[NUM_OPCODES];
 
 #define getOpMode(m)	(cast(enum OpMode, luaP_opmodes[m] & 3))
 #define getBMode(m)	(cast(enum OpArgMask, (luaP_opmodes[m] >> 4) & 3))
@@ -292,6 +281,3 @@ LUAI_DDEC const char *const luaP_opnames[NUM_OPCODES+1];  /* opcode names */
 
 /* number of list items to accumulate before a SETLIST instruction */
 #define LFIELDS_PER_FLUSH	50
-
-
-#endif

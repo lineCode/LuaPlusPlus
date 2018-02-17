@@ -1,38 +1,27 @@
+#pragma once
 /*
 ** $Id: llimits.h,v 1.141 2015/11/19 19:16:22 roberto Exp $
 ** Limits, basic types, and some other 'installation-dependent' definitions
 ** See Copyright Notice in lua.h
 */
 
-#ifndef llimits_h
-#define llimits_h
-
-
-#include <limits.h>
-#include <stddef.h>
-
-
+#include <climits>
+#include <cstddef>
 #include <lua.hpp>
+#include <limits>
 
 /*
 ** 'lu_mem' and 'l_mem' are unsigned/signed integers big enough to count
 ** the total memory used by Lua (in bytes). Usually, 'size_t' and
 ** 'ptrdiff_t' should work, but we use 'long' for 16-bit machines.
 */
-#if defined(LUAI_MEM)		/* { external definitions? */
-typedef LUAI_UMEM lu_mem;
-typedef LUAI_MEM l_mem;
-#elif LUAI_BITSINT >= 32	/* }{ */
-typedef size_t lu_mem;
-typedef ptrdiff_t l_mem;
-#else  /* 16-bit ints */	/* }{ */
-typedef unsigned long lu_mem;
-typedef long l_mem;
-#endif				/* } */
-
-
-/* chars used as small naturals (so that 'char' is reserved for characters) */
-typedef unsigned char lu_byte;
+#if defined(LUAI_MEM)		/* external definitions? */
+using lu_mem = LUAI_UMEM;
+using l_mem = LUAI_MEM;
+#else
+using lu_mem = size_t;
+using l_mem = ptrdiff_t;
+#endif
 
 
 /* maximum value for size_t */
@@ -62,23 +51,17 @@ typedef unsigned char lu_byte;
 
 /* type to ensure maximum alignment */
 #if defined(LUAI_USER_ALIGNMENT_T)
-typedef LUAI_USER_ALIGNMENT_T L_Umaxalign;
+using L_Umaxalign = LUAI_USER_ALIGNMENT_T;
 #else
-typedef union {
+union L_Umaxalign
+{
   lua_Number n;
   double u;
   void *s;
   lua_Integer i;
   long l;
-} L_Umaxalign;
+};
 #endif
-
-
-
-/* types of 'usual argument conversions' for lua_Number and lua_Integer */
-typedef LUAI_UACNUMBER l_uacNumber;
-typedef LUAI_UACINT l_uacInt;
-
 
 /* internal assertions for in-house debugging */
 #if defined(lua_assert)
@@ -111,10 +94,10 @@ typedef LUAI_UACINT l_uacInt;
 #define cast(t, exp)	((t)(exp))
 
 #define cast_void(i)	cast(void, (i))
-#define cast_byte(i)	cast(lu_byte, (i))
+#define cast_byte(i)	cast(uint8_t, (i))
 #define cast_num(i)	cast(lua_Number, (i))
 #define cast_int(i)	cast(int, (i))
-#define cast_uchar(i)	cast(unsigned char, (i))
+#define cast_uchar(i)	cast(uint8_t, (i))
 
 
 /* cast a signed lua_Integer to lua_Unsigned */
@@ -131,26 +114,12 @@ typedef LUAI_UACINT l_uacInt;
 #define l_castU2S(i)	((lua_Integer)(i))
 #endif
 
-
-/*
-** non-return type
-*/
-#if defined(__GNUC__)
-#define l_noret		void __attribute__((noreturn))
-#elif defined(_MSC_VER) && _MSC_VER >= 1200
-#define l_noret		void __declspec(noreturn)
-#else
-#define l_noret		void
-#endif
-
-
-
 /*
 ** maximum depth for nested C calls and syntactical nested non-terminals
 ** in a program. (Value must fit in an unsigned short int.)
 */
 #if !defined(LUAI_MAXCCALLS)
-#define LUAI_MAXCCALLS		200
+#define LUAI_MAXCCALLS 200
 #endif
 
 
@@ -159,11 +128,7 @@ typedef LUAI_UACINT l_uacInt;
 ** type for virtual-machine instructions;
 ** must be an unsigned with (at least) 4 bytes (see details in lopcodes.h)
 */
-#if LUAI_BITSINT >= 32
-typedef unsigned int Instruction;
-#else
-typedef unsigned long Instruction;
-#endif
+using Instruction = uint32_t;
 
 
 
@@ -318,6 +283,4 @@ typedef unsigned long Instruction;
 #else
 #define condchangemem(L,pre,pos)  \
 	{ if (G(L)->gcrunning) { pre; luaC_fullgc(L, 0); pos; } }
-#endif
-
 #endif

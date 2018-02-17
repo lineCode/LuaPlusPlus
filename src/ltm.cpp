@@ -9,11 +9,9 @@
 
 #include <lprefix.hpp>
 
-
-#include <string.h>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <ldebug.hpp>
 #include <ldo.hpp>
 #include <lobject.hpp>

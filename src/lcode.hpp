@@ -1,11 +1,9 @@
+#pragma once
 /*
 ** $Id: lcode.h,v 1.64 2016/01/05 16:22:37 roberto Exp $
 ** Code generator for Lua
 ** See Copyright Notice in lua.h
 */
-
-#ifndef lcode_h
-#define lcode_h
 
 #include <llex.hpp>
 #include <lobject.hpp>
@@ -83,6 +81,3 @@ LUAI_FUNC void luaK_infix (FuncState *fs, BinOpr op, expdesc *v);
 LUAI_FUNC void luaK_posfix (FuncState *fs, BinOpr op, expdesc *v1,
                             expdesc *v2, int line);
 LUAI_FUNC void luaK_setlist (FuncState *fs, int base, int nelems, int tostore);
-
-
-#endif

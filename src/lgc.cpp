@@ -9,11 +9,8 @@
 
 #include <lprefix.hpp>
 
-
-#include <string.h>
-
+#include <cstring>
 #include <lua.hpp>
-
 #include <ldebug.hpp>
 #include <ldo.hpp>
 #include <lfunc.hpp>
@@ -502,7 +499,7 @@ static lu_mem traverseCclosure (global_State *g, CClosure *cl) {
   int i;
   for (i = 0; i < cl->nupvalues; i++)  /* mark its upvalues */
     markvalue(g, &cl->upvalue[i]);
-  return sizeCclosure(cl->nupvalues);
+  return sizeCClosure(cl->nupvalues);
 }
 
 /*
@@ -523,7 +520,7 @@ static lu_mem traverseLclosure (global_State *g, LClosure *cl) {
         markvalue(g, uv->v);
     }
   }
-  return sizeLclosure(cl->nupvalues);
+  return sizeLClosure(cl->nupvalues);
 }
 
 
@@ -689,7 +686,7 @@ static void freeLclosure (lua_State *L, LClosure *cl) {
     if (uv)
       luaC_upvdeccount(L, uv);
   }
-  luaM_freemem(L, cl, sizeLclosure(cl->nupvalues));
+  luaM_freemem(L, cl, sizeLClosure(cl->nupvalues));
 }
 
 
@@ -701,7 +698,7 @@ static void freeobj (lua_State *L, GCObject *o) {
       break;
     }
     case LUA_TCCL: {
-      luaM_freemem(L, o, sizeCclosure(gco2ccl(o)->nupvalues));
+      luaM_freemem(L, o, sizeCClosure(gco2ccl(o)->nupvalues));
       break;
     }
     case LUA_TTABLE: luaH_free(L, gco2t(o)); break;
@@ -811,7 +808,7 @@ static void GCTM (lua_State *L, int propagateerrors) {
   tm = luaT_gettmbyobj(L, &v, TM_GC);
   if (tm != NULL && ttisfunction(tm)) {  /* is there a finalizer? */
     int status;
-    lu_byte oldah = L->allowhook;
+    uint8_t oldah = L->allowhook;
     int running  = g->gcrunning;
     L->allowhook = 0;  /* stop debug hooks during GC metamethod */
     g->gcrunning = 0;  /* avoid GC steps */

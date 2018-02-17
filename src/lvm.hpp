@@ -1,12 +1,9 @@
+#pragma once
 /*
 ** $Id: lvm.h,v 2.41 2016/12/22 13:08:50 roberto Exp $
 ** Lua virtual machine
 ** See Copyright Notice in lua.h
 */
-
-#ifndef lvm_h
-#define lvm_h
-
 
 #include <ldo.hpp>
 #include <lobject.hpp>
@@ -109,5 +106,3 @@ LUAI_FUNC lua_Integer luaV_div (lua_State *L, lua_Integer x, lua_Integer y);
 LUAI_FUNC lua_Integer luaV_mod (lua_State *L, lua_Integer x, lua_Integer y);
 LUAI_FUNC lua_Integer luaV_shiftl (lua_Integer x, lua_Integer y);
 LUAI_FUNC void luaV_objlen (lua_State *L, StkId ra, const TValue *rb);
-
-#endif

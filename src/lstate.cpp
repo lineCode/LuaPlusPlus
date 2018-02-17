@@ -9,12 +9,9 @@
 
 #include <lprefix.hpp>
 
-
-#include <stddef.h>
-#include <string.h>
-
+#include <cstddef>
+#include <cstring>
 #include <lua.hpp>
-
 #include <lapi.hpp>
 #include <ldebug.hpp>
 #include <ldo.hpp>
@@ -43,7 +40,7 @@
 */
 #if !defined(luai_makeseed)
 #include <time.h>
-#define luai_makeseed()		cast(unsigned int, time(NULL))
+#define luai_makeseed()		cast(uint32_t, time(NULL))
 #endif
 
 
@@ -52,7 +49,7 @@
 ** thread state + extra space
 */
 typedef struct LX {
-  lu_byte extra_[LUA_EXTRASPACE];
+  uint8_t extra_[LUA_EXTRASPACE];
   lua_State l;
 } LX;
 
@@ -67,26 +64,33 @@ typedef struct LG {
 
 
 
-#define fromstate(L)	(cast(LX *, cast(lu_byte *, (L)) - offsetof(LX, l)))
+#define fromstate(L)	(cast(LX *, cast(uint8_t *, (L)) - offsetof(LX, l)))
 
 
 /*
 ** Compute an initial seed as random as possible. Rely on Address Space
 ** Layout Randomization (if present) to increase randomness..
 */
-#define addbuff(b,p,e) \
-  { size_t t = cast(size_t, e); \
-    memcpy(b + p, &t, sizeof(t)); p += sizeof(t); }
 
-static unsigned int makeseed (lua_State *L) {
+static uint32_t makeseed(lua_State* L)
+{
   char buff[4 * sizeof(size_t)];
-  unsigned int h = luai_makeseed();
+  uint32_t h = luai_makeseed();
   int p = 0;
-  addbuff(buff, p, L);  /* heap variable */
-  addbuff(buff, p, &h);  /* local variable */
-  addbuff(buff, p, luaO_nilobject);  /* global variable */
-  addbuff(buff, p, &lua_newstate);  /* public function */
+
+  auto addBuff = [](auto& b, auto& p, const auto& e)
+  {
+    size_t t = reinterpret_cast<size_t>(e);
+    memcpy(b + p, &t, sizeof(t));
+    p += sizeof(t);
+  };
+
+  addBuff(buff, p, L);  /* heap variable */
+  addBuff(buff, p, &h);  /* local variable */
+  addBuff(buff, p, luaO_nilobject);  /* global variable */
+  addBuff(buff, p, &lua_newstate);  /* public function */
   lua_assert(p == sizeof(buff));
+
   return luaS_hash(buff, p, h);
 }
 

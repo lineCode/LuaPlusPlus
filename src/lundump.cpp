@@ -10,10 +10,9 @@
 #include <lprefix.hpp>
 
 
-#include <string.h>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <ldebug.hpp>
 #include <ldo.hpp>
 #include <lfunc.hpp>
@@ -36,7 +35,7 @@ typedef struct {
 } LoadState;
 
 
-static l_noret error(LoadState *S, const char *why) {
+static void error(LoadState *S, const char *why) {
   luaO_pushfstring(S->L, "%s: %s precompiled chunk", S->name, why);
   luaD_throw(S->L, LUA_ERRSYNTAX);
 }
@@ -57,8 +56,8 @@ static void LoadBlock (LoadState *S, void *b, size_t size) {
 #define LoadVar(S,x)		LoadVector(S,&x,1)
 
 
-static lu_byte LoadByte (LoadState *S) {
-  lu_byte x;
+static uint8_t LoadByte (LoadState *S) {
+  uint8_t x;
   LoadVar(S, x);
   return x;
 }

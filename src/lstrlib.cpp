@@ -9,18 +9,16 @@
 
 #include <lprefix.hpp>
 
-
-#include <ctype.h>
-#include <float.h>
-#include <limits.h>
-#include <locale.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cfloat>
+#include <climits>
+#include <clocale>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <lauxlib.hpp>
 #include <lualib.hpp>
 
@@ -28,7 +26,7 @@
 /*
 ** maximum number of captures that a pattern can do during
 ** pattern-matching. This limit is arbitrary, but must fit in
-** an unsigned char.
+** an uint8_t.
 */
 #if !defined(LUA_MAXCAPTURES)
 #define LUA_MAXCAPTURES		32
@@ -36,7 +34,7 @@
 
 
 /* macro to 'unsign' a character */
-#define uchar(c)	((unsigned char)(c))
+#define uchar(c)	((uint8_t)(c))
 
 
 /*
@@ -217,7 +215,7 @@ typedef struct MatchState {
   const char *p_end;  /* end ('\0') of pattern */
   lua_State *L;
   int matchdepth;  /* control for recursive depth (to avoid C stack overflow) */
-  unsigned char level;  /* total number of captures (finished or unfinished) */
+  uint8_t level;  /* total number of captures (finished or unfinished) */
   struct {
     const char *init;
     ptrdiff_t len;
@@ -841,10 +839,10 @@ static lua_Number adddigit (char *buff, int n, lua_Number x) {
 static int num2straux (char *buff, int sz, lua_Number x) {
   /* if 'inf' or 'NaN', format it like '%g' */
   if (x != x || x == (lua_Number)HUGE_VAL || x == -(lua_Number)HUGE_VAL)
-    return l_sprintf(buff, sz, LUA_NUMBER_FMT, (LUAI_UACNUMBER)x);
+    return l_sprintf(buff, sz, LUA_NUMBER_FMT, (LUA_NUMBER)x);
   else if (x == 0) {  /* can be -0... */
     /* create "0" or "-0" followed by exponent */
-    return l_sprintf(buff, sz, LUA_NUMBER_FMT "x0p+0", (LUAI_UACNUMBER)x);
+    return l_sprintf(buff, sz, LUA_NUMBER_FMT "x0p+0", (LUA_NUMBER)x);
   }
   else {
     int e;
@@ -961,7 +959,7 @@ static void addliteral (lua_State *L, luaL_Buffer *b, int arg) {
         const char *format = (n == LUA_MININTEGER)  /* corner case? */
                            ? "0x%" LUA_INTEGER_FRMLEN "x"  /* use hexa */
                            : LUA_INTEGER_FMT;  /* else use default format */
-        nb = l_sprintf(buff, MAX_ITEM, format, (LUAI_UACINT)n);
+        nb = l_sprintf(buff, MAX_ITEM, format, (LUA_INTEGER)n);
       }
       luaL_addsize(b, nb);
       break;
@@ -1042,7 +1040,7 @@ static int str_format (lua_State *L) {
         case 'o': case 'u': case 'x': case 'X': {
           lua_Integer n = luaL_checkinteger(L, arg);
           addlenmod(form, LUA_INTEGER_FRMLEN);
-          nb = l_sprintf(buff, MAX_ITEM, form, (LUAI_UACINT)n);
+          nb = l_sprintf(buff, MAX_ITEM, form, (LUA_INTEGER)n);
           break;
         }
         case 'a': case 'A':
@@ -1054,7 +1052,7 @@ static int str_format (lua_State *L) {
         case 'g': case 'G': {
           lua_Number n = luaL_checknumber(L, arg);
           addlenmod(form, LUA_NUMBER_FRMLEN);
-          nb = l_sprintf(buff, MAX_ITEM, form, (LUAI_UACNUMBER)n);
+          nb = l_sprintf(buff, MAX_ITEM, form, (LUA_NUMBER)n);
           break;
         }
         case 'q': {
@@ -1454,7 +1452,7 @@ static lua_Integer unpackint (lua_State *L, const char *str,
   int limit = (size  <= SZINT) ? size : SZINT;
   for (i = limit - 1; i >= 0; i--) {
     res <<= NB;
-    res |= (lua_Unsigned)(unsigned char)str[islittle ? i : size - 1 - i];
+    res |= (lua_Unsigned)(uint8_t)str[islittle ? i : size - 1 - i];
   }
   if (size < SZINT) {  /* real size smaller than lua_Integer? */
     if (issigned) {  /* needs sign extension? */
@@ -1465,7 +1463,7 @@ static lua_Integer unpackint (lua_State *L, const char *str,
   else if (size > SZINT) {  /* must check unread bytes */
     int mask = (!issigned || (lua_Integer)res >= 0) ? 0 : MC;
     for (i = limit; i < size; i++) {
-      if ((unsigned char)str[islittle ? i : size - 1 - i] != mask)
+      if ((uint8_t)str[islittle ? i : size - 1 - i] != mask)
         luaL_error(L, "%d-byte integer does not fit into Lua Integer", size);
     }
   }

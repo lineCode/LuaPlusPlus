@@ -1,3 +1,4 @@
+#pragma once
 /*
 ** $Id: lua.h,v 1.332 2016/12/22 15:51:20 roberto Exp $
 ** Lua - A Scripting Language
@@ -5,14 +6,8 @@
 ** See Copyright Notice at the end of this file
 */
 
-
-#ifndef lua_h
-#define lua_h
-
-#include <stdarg.h>
-#include <stddef.h>
-
-
+#include <cstdarg>
+#include <cstddef>
 #include <luaconf.hpp>
 
 
@@ -53,7 +48,7 @@
 #define LUA_ERRERR	6
 
 
-typedef struct lua_State lua_State;
+struct lua_State;
 
 
 /*
@@ -86,52 +81,42 @@ typedef struct lua_State lua_State;
 
 
 /* type of numbers in Lua */
-typedef LUA_NUMBER lua_Number;
+using lua_Number = LUA_NUMBER;
 
 
 /* type for integer functions */
-typedef LUA_INTEGER lua_Integer;
+using lua_Integer = LUA_INTEGER;
 
 /* unsigned integer type */
-typedef LUA_UNSIGNED lua_Unsigned;
+using lua_Unsigned = LUA_UNSIGNED;
 
 /* type for continuation-function contexts */
-typedef LUA_KCONTEXT lua_KContext;
+using lua_KContext = LUA_KCONTEXT;
 
 
 /*
 ** Type for C functions registered with Lua
 */
-typedef int (*lua_CFunction) (lua_State *L);
+using lua_CFunction = int (*) (lua_State *L);
 
 /*
 ** Type for continuation functions
 */
-typedef int (*lua_KFunction) (lua_State *L, int status, lua_KContext ctx);
+using lua_KFunction = int (*) (lua_State *L, int status, lua_KContext ctx);
 
 
 /*
 ** Type for functions that read/write blocks when loading/dumping Lua chunks
 */
-typedef const char * (*lua_Reader) (lua_State *L, void *ud, size_t *sz);
+using lua_Reader = const char * (*) (lua_State *L, void *ud, size_t *sz);
 
-typedef int (*lua_Writer) (lua_State *L, const void *p, size_t sz, void *ud);
+using lua_Writer = int (*) (lua_State *L, const void *p, size_t sz, void *ud);
 
 
 /*
 ** Type for memory-allocation functions
 */
-typedef void * (*lua_Alloc) (void *ud, void *ptr, size_t osize, size_t nsize);
-
-
-
-/*
-** generic extra include file
-*/
-#if defined(LUA_USER_H)
-#include LUA_USER_H
-#endif
-
+using lua_Alloc = void * (*) (void *ud, void *ptr, size_t osize, size_t nsize);
 
 /*
 ** RCS ident string
@@ -376,20 +361,6 @@ LUA_API void      (lua_setallocf) (lua_State *L, lua_Alloc f, void *ud);
 
 
 /*
-** {==============================================================
-** compatibility macros for unsigned conversions
-** ===============================================================
-*/
-#if defined(LUA_COMPAT_APIINTCASTS)
-
-#define lua_pushunsigned(L,n)	lua_pushinteger(L, (lua_Integer)(n))
-#define lua_tounsignedx(L,i,is)	((lua_Unsigned)lua_tointegerx(L,i,is))
-#define lua_tounsigned(L,i)	lua_tounsignedx(L,(i),NULL)
-
-#endif
-/* }============================================================== */
-
-/*
 ** {======================================================================
 ** Debug API
 ** =======================================================================
@@ -447,8 +418,8 @@ struct lua_Debug {
   int currentline;	/* (l) */
   int linedefined;	/* (S) */
   int lastlinedefined;	/* (S) */
-  unsigned char nups;	/* (u) number of upvalues */
-  unsigned char nparams;/* (u) number of parameters */
+  uint8_t nups;	/* (u) number of upvalues */
+  uint8_t nparams;/* (u) number of parameters */
   char isvararg;        /* (u) */
   char istailcall;	/* (t) */
   char short_src[LUA_IDSIZE]; /* (S) */
@@ -481,6 +452,3 @@ struct lua_Debug {
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
-
-
-#endif

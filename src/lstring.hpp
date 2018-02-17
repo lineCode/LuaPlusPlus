@@ -1,11 +1,9 @@
+#pragma once
 /*
 ** $Id: lstring.h,v 1.61 2015/11/03 15:36:01 roberto Exp $
 ** String table (keep all strings handled by Lua)
 ** See Copyright Notice in lua.h
 */
-
-#ifndef lstring_h
-#define lstring_h
 
 #include <lgc.hpp>
 #include <lobject.hpp>
@@ -44,6 +42,3 @@ LUAI_FUNC Udata *luaS_newudata (lua_State *L, size_t s);
 LUAI_FUNC TString *luaS_newlstr (lua_State *L, const char *str, size_t l);
 LUAI_FUNC TString *luaS_new (lua_State *L, const char *str);
 LUAI_FUNC TString *luaS_createlngstrobj (lua_State *L, size_t l);
-
-
-#endif

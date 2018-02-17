@@ -10,12 +10,11 @@
 #include <lprefix.hpp>
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <lauxlib.hpp>
 #include <lualib.hpp>
 

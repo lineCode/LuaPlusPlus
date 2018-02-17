@@ -9,16 +9,14 @@
 
 #include <lprefix.hpp>
 
-
-#include <ctype.h>
-#include <errno.h>
-#include <locale.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cerrno>
+#include <clocale>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <lauxlib.hpp>
 #include <lualib.hpp>
 
@@ -620,9 +618,9 @@ static int g_write (lua_State *L, FILE *f, int arg) {
       /* optimization: could be done exactly as for strings */
       int len = lua_isinteger(L, arg)
                 ? fprintf(f, LUA_INTEGER_FMT,
-                             (LUAI_UACINT)lua_tointeger(L, arg))
+                             (LUA_INTEGER)lua_tointeger(L, arg))
                 : fprintf(f, LUA_NUMBER_FMT,
-                             (LUAI_UACNUMBER)lua_tonumber(L, arg));
+                             (LUA_NUMBER)lua_tonumber(L, arg));
       status = status && (len > 0);
     }
     else {

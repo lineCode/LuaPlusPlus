@@ -9,16 +9,13 @@
 
 #include <lprefix.hpp>
 
-
-#include <locale.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <clocale>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <lua.hpp>
-
 #include <lctype.hpp>
 #include <ldebug.hpp>
 #include <ldo.hpp>
@@ -63,7 +60,7 @@ int luaO_fb2int (int x) {
 ** Computes ceil(log2(x))
 */
 int luaO_ceillog2 (unsigned int x) {
-  static const lu_byte log_2[256] = {  /* log_2[i] = ceil(log2(i - 1)) */
+  static const uint8_t log_2[256] = {  /* log_2[i] = ceil(log2(i - 1)) */
     0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
     6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
     7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
@@ -376,12 +373,10 @@ void luaO_tostring (lua_State *L, StkId obj) {
     len = lua_integer2str(buff, sizeof(buff), ivalue(obj));
   else {
     len = lua_number2str(buff, sizeof(buff), fltvalue(obj));
-#if !defined(LUA_COMPAT_FLOATSTRING)
     if (buff[strspn(buff, "-0123456789")] == '\0') {  /* looks like an int? */
       buff[len++] = lua_getlocaledecpoint();
       buff[len++] = '0';  /* adds '.0' to result */
     }
-#endif
   }
   setsvalue2s(L, obj, luaS_newlstr(L, buff, len));
 }
@@ -423,11 +418,11 @@ const char *luaO_pushvfstring (lua_State *L, const char *fmt, va_list argp) {
         goto top2str;
       }
       case 'I': {  /* a 'lua_Integer' */
-        setivalue(L->top, cast(lua_Integer, va_arg(argp, l_uacInt)));
+        setivalue(L->top, cast(lua_Integer, va_arg(argp, lua_Integer)));
         goto top2str;
       }
       case 'f': {  /* a 'lua_Number' */
-        setfltvalue(L->top, cast_num(va_arg(argp, l_uacNumber)));
+        setfltvalue(L->top, cast_num(va_arg(argp, lua_Number)));
       top2str:  /* convert the top element to a string */
         luaD_inctop(L);
         luaO_tostring(L, L->top - 1);

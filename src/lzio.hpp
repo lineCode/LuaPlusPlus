@@ -1,3 +1,4 @@
+#pragma once
 /*
 ** $Id: lzio.h,v 1.31 2015/09/08 15:41:05 roberto Exp $
 ** Buffered streams
@@ -5,11 +6,7 @@
 */
 
 
-#ifndef lzio_h
-#define lzio_h
-
 #include <lua.hpp>
-
 #include <lmem.hpp>
 
 
@@ -62,5 +59,3 @@ struct Zio {
 
 
 LUAI_FUNC int luaZ_fill (ZIO *z);
-
-#endif

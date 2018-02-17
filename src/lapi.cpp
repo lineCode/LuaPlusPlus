@@ -9,12 +9,9 @@
 
 #include <lprefix.hpp>
 
-
-#include <stdarg.h>
-#include <string.h>
-
-#include <lua.hpp>
-
+#include <cstdarg>
+#include <cstring>
+#include <cstdint>
 #include <lapi.hpp>
 #include <ldebug.hpp>
 #include <ldo.hpp>
@@ -26,10 +23,9 @@
 #include <lstring.hpp>
 #include <ltable.hpp>
 #include <ltm.hpp>
+#include <lua.hpp>
 #include <lundump.hpp>
 #include <lvm.hpp>
-
-
 
 const char lua_ident[] =
   "$LuaVersion: " LUA_COPYRIGHT " $"
@@ -1066,7 +1062,7 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
     }
     case LUA_GCSTEP: {
       l_mem debt = 1;  /* =1 to signal that it did an actual step */
-      lu_byte oldrunning = g->gcrunning;
+      uint8_t oldrunning = g->gcrunning;
       g->gcrunning = 1;  /* allow GC to run */
       if (data == 0) {
         luaE_setdebt(g, -GCSTEPSIZE);  /* to do a "small" step */

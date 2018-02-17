@@ -9,11 +9,8 @@
 
 #include <lprefix.hpp>
 
-
-#include <stddef.h>
-
+#include <cstddef>
 #include <lua.hpp>
-
 #include <lfunc.hpp>
 #include <lgc.hpp>
 #include <lmem.hpp>
@@ -21,9 +18,8 @@
 #include <lstate.hpp>
 
 
-
 CClosure *luaF_newCclosure (lua_State *L, int n) {
-  GCObject *o = luaC_newobj(L, LUA_TCCL, sizeCclosure(n));
+  GCObject *o = luaC_newobj(L, LUA_TCCL, sizeCClosure(n));
   CClosure *c = gco2ccl(o);
   c->nupvalues = cast_byte(n);
   return c;
@@ -31,7 +27,7 @@ CClosure *luaF_newCclosure (lua_State *L, int n) {
 
 
 LClosure *luaF_newLclosure (lua_State *L, int n) {
-  GCObject *o = luaC_newobj(L, LUA_TLCL, sizeLclosure(n));
+  GCObject *o = luaC_newobj(L, LUA_TLCL, sizeLClosure(n));
   LClosure *c = gco2lcl(o);
   c->p = NULL;
   c->nupvalues = cast_byte(n);

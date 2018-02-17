@@ -9,11 +9,8 @@
 
 #include <lprefix.hpp>
 
-
-#include <string.h>
-
+#include <cstring>
 #include <lua.hpp>
-
 #include <lcode.hpp>
 #include <ldebug.hpp>
 #include <ldo.hpp>
@@ -49,9 +46,9 @@ typedef struct BlockCnt {
   struct BlockCnt *previous;  /* chain */
   int firstlabel;  /* index of first label in this block */
   int firstgoto;  /* index of first pending goto in this block */
-  lu_byte nactvar;  /* # active locals outside the block */
-  lu_byte upval;  /* true if some variable in the block is an upvalue */
-  lu_byte isloop;  /* true if 'block' is a loop */
+  uint8_t nactvar;  /* # active locals outside the block */
+  uint8_t upval;  /* true if some variable in the block is an upvalue */
+  uint8_t isloop;  /* true if 'block' is a loop */
 } BlockCnt;
 
 
@@ -64,19 +61,19 @@ static void expr (LexState *ls, expdesc *v);
 
 
 /* semantic error */
-static l_noret semerror (LexState *ls, const char *msg) {
+static void semerror (LexState *ls, const char *msg) {
   ls->t.token = 0;  /* remove "near <token>" from final message */
   luaX_syntaxerror(ls, msg);
 }
 
 
-static l_noret error_expected (LexState *ls, int token) {
+static void error_expected (LexState *ls, int token) {
   luaX_syntaxerror(ls,
       luaO_pushfstring(ls->L, "%s expected", luaX_token2str(ls, token)));
 }
 
 
-static l_noret errorlimit (FuncState *fs, int limit, const char *what) {
+static void errorlimit (FuncState *fs, int limit, const char *what) {
   lua_State *L = fs->ls->L;
   const char *msg;
   int line = fs->f->linedefined;
@@ -436,7 +433,7 @@ static void movegotosout (FuncState *fs, BlockCnt *bl) {
 }
 
 
-static void enterblock (FuncState *fs, BlockCnt *bl, lu_byte isloop) {
+static void enterblock (FuncState *fs, BlockCnt *bl, uint8_t isloop) {
   bl->isloop = isloop;
   bl->nactvar = fs->nactvar;
   bl->firstlabel = fs->ls->dyd->label.n;
@@ -461,7 +458,7 @@ static void breaklabel (LexState *ls) {
 ** generates an error for an undefined 'goto'; choose appropriate
 ** message when label name is a reserved word (which can only be 'break')
 */
-static l_noret undefgoto (LexState *ls, Labeldesc *gt) {
+static void undefgoto (LexState *ls, Labeldesc *gt) {
   const char *msg = isreserved(gt->name)
                     ? "<%s> at line %d not inside a loop"
                     : "no visible label '%s' for <goto> at line %d";
@@ -1023,8 +1020,8 @@ static BinOpr getbinopr (int op) {
 
 
 static const struct {
-  lu_byte left;  /* left priority for each binary operator */
-  lu_byte right; /* right priority */
+  uint8_t left;  /* left priority for each binary operator */
+  uint8_t right; /* right priority */
 } priority[] = {  /* ORDER OPR */
    {10, 10}, {10, 10},           /* '+' '-' */
    {11, 11}, {11, 11},           /* '*' '%' */

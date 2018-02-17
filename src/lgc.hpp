@@ -1,12 +1,9 @@
+#pragma once
 /*
 ** $Id: lgc.h,v 2.91 2015/12/21 13:02:14 roberto Exp $
 ** Garbage Collector
 ** See Copyright Notice in lua.h
 */
-
-#ifndef lgc_h
-#define lgc_h
-
 
 #include <lobject.hpp>
 #include <lstate.hpp>
@@ -64,7 +61,7 @@
 /*
 ** some useful bit tricks
 */
-#define resetbits(x,m)		((x) &= cast(lu_byte, ~(m)))
+#define resetbits(x,m)		((x) &= cast(uint8_t, ~(m)))
 #define setbits(x,m)		((x) |= (m))
 #define testbits(x,m)		((x) & (m))
 #define bitmask(b)		(1<<(b))
@@ -98,7 +95,7 @@
 #define changewhite(x)	((x)->marked ^= WHITEBITS)
 #define gray2black(x)	l_setbit((x)->marked, BLACKBIT)
 
-#define luaC_white(g)	cast(lu_byte, (g)->currentwhite & WHITEBITS)
+#define luaC_white(g)	cast(uint8_t, (g)->currentwhite & WHITEBITS)
 
 
 /*
@@ -142,6 +139,3 @@ LUAI_FUNC void luaC_barrierback_ (lua_State *L, Table *o);
 LUAI_FUNC void luaC_upvalbarrier_ (lua_State *L, UpVal *uv);
 LUAI_FUNC void luaC_checkfinalizer (lua_State *L, GCObject *o, Table *mt);
 LUAI_FUNC void luaC_upvdeccount (lua_State *L, UpVal *uv);
-
-
-#endif

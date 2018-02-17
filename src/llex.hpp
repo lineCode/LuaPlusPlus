@@ -1,11 +1,9 @@
+#pragma once
 /*
 ** $Id: llex.h,v 1.79 2016/05/02 14:02:12 roberto Exp $
 ** Lexical Analyzer
 ** See Copyright Notice in lua.h
 */
-
-#ifndef llex_h
-#define llex_h
 
 #include <lobject.hpp>
 #include <lzio.hpp>
@@ -40,17 +38,19 @@ enum RESERVED {
 #define NUM_RESERVED	(cast(int, TK_WHILE-FIRST_RESERVED+1))
 
 
-typedef union {
+union SemInfo
+{
   lua_Number r;
   lua_Integer i;
   TString *ts;
-} SemInfo;  /* semantics information */
+};  /* semantics information */
 
 
-typedef struct Token {
+struct Token
+{
   int token;
   SemInfo seminfo;
-} Token;
+};
 
 
 /* state of the lexer plus state of the parser when shared by all
@@ -78,8 +78,5 @@ LUAI_FUNC void luaX_setinput (lua_State *L, LexState *ls, ZIO *z,
 LUAI_FUNC TString *luaX_newstring (LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next (LexState *ls);
 LUAI_FUNC int luaX_lookahead (LexState *ls);
-LUAI_FUNC l_noret luaX_syntaxerror (LexState *ls, const char *s);
+LUAI_FUNC void luaX_syntaxerror (LexState *ls, const char *s);
 LUAI_FUNC const char *luaX_token2str (LexState *ls, int token);
-
-
-#endif

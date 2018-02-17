@@ -9,14 +9,12 @@
 
 #include <lprefix.hpp>
 
-
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <lua.hpp>
-
 #include <lauxlib.hpp>
 #include <lualib.hpp>
 
@@ -51,15 +49,15 @@ static const char *b_str2int (const char *s, int base, lua_Integer *pn) {
   s += strspn(s, SPACECHARS);  /* skip initial spaces */
   if (*s == '-') { s++; neg = 1; }  /* handle signal */
   else if (*s == '+') s++;
-  if (!isalnum((unsigned char)*s))  /* no digit? */
+  if (!isalnum((uint8_t)*s))  /* no digit? */
     return NULL;
   do {
-    int digit = (isdigit((unsigned char)*s)) ? *s - '0'
-                   : (toupper((unsigned char)*s) - 'A') + 10;
+    int digit = (isdigit((uint8_t)*s)) ? *s - '0'
+                   : (toupper((uint8_t)*s) - 'A') + 10;
     if (digit >= base) return NULL;  /* invalid numeral */
     n = n * base + digit;
     s++;
-  } while (isalnum((unsigned char)*s));
+  } while (isalnum((uint8_t)*s));
   s += strspn(s, SPACECHARS);  /* skip trailing spaces */
   *pn = (lua_Integer)((neg) ? (0u - n) : n);
   return s;
@@ -255,15 +253,11 @@ static int ipairsaux (lua_State *L) {
 ** (The given "table" may not be a table.)
 */
 static int luaB_ipairs (lua_State *L) {
-#if defined(LUA_COMPAT_IPAIRS)
-  return pairsmeta(L, "__ipairs", 1, ipairsaux);
-#else
   luaL_checkany(L, 1);
   lua_pushcfunction(L, ipairsaux);  /* iteration function */
   lua_pushvalue(L, 1);  /* state */
   lua_pushinteger(L, 0);  /* initial value */
   return 3;
-#endif
 }
 
 
@@ -459,9 +453,6 @@ static const luaL_Reg base_funcs[] = {
   {"ipairs", luaB_ipairs},
   {"loadfile", luaB_loadfile},
   {"load", luaB_load},
-#if defined(LUA_COMPAT_LOADSTRING)
-  {"loadstring", luaB_load},
-#endif
   {"next", luaB_next},
   {"pairs", luaB_pairs},
   {"pcall", luaB_pcall},

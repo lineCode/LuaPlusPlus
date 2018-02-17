@@ -1,18 +1,14 @@
+#pragma once
 /*
 ** $Id: lstate.h,v 2.133 2016/12/22 13:08:50 roberto Exp $
 ** Global State
 ** See Copyright Notice in lua.h
 */
 
-#ifndef lstate_h
-#define lstate_h
-
 #include <lua.hpp>
-
 #include <lobject.hpp>
 #include <ltm.hpp>
 #include <lzio.hpp>
-
 
 /*
 
@@ -38,7 +34,7 @@ struct lua_longjmp;  /* defined in ldo.c */
 ** is thread safe
 */
 #if !defined(l_signalT)
-#include <signal.h>
+#include <csignal>
 #define l_signalT	sig_atomic_t
 #endif
 
@@ -126,10 +122,10 @@ typedef struct global_State {
   stringtable strt;  /* hash table for strings */
   TValue l_registry;
   unsigned int seed;  /* randomized seed for hashes */
-  lu_byte currentwhite;
-  lu_byte gcstate;  /* state of garbage collector */
-  lu_byte gckind;  /* kind of GC running */
-  lu_byte gcrunning;  /* true if GC is running */
+  uint8_t currentwhite;
+  uint8_t gcstate;  /* state of garbage collector */
+  uint8_t gckind;  /* kind of GC running */
+  uint8_t gcrunning;  /* true if GC is running */
   GCObject *allgc;  /* list of all collectable objects */
   GCObject **sweepgc;  /* current position of sweep in list */
   GCObject *finobj;  /* list of collectable objects with finalizers */
@@ -157,10 +153,10 @@ typedef struct global_State {
 /*
 ** 'per thread' state
 */
-struct lua_State {
-  CommonHeader;
+struct lua_State : CommonHeader
+{
   unsigned short nci;  /* number of items in 'ci' list */
-  lu_byte status;
+  uint8_t status;
   StkId top;  /* first free slot in the stack */
   global_State *l_G;
   CallInfo *ci;  /* call info for current function */
@@ -180,7 +176,7 @@ struct lua_State {
   unsigned short nny;  /* number of non-yieldable calls in stack */
   unsigned short nCcalls;  /* number of nested C calls */
   l_signalT hookmask;
-  lu_byte allowhook;
+  uint8_t allowhook;
 };
 
 
@@ -229,7 +225,3 @@ LUAI_FUNC void luaE_freethread (lua_State *L, lua_State *L1);
 LUAI_FUNC CallInfo *luaE_extendCI (lua_State *L);
 LUAI_FUNC void luaE_freeCI (lua_State *L);
 LUAI_FUNC void luaE_shrinkCI (lua_State *L);
-
-
-#endif
-

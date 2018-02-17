@@ -10,11 +10,11 @@
 #include <lprefix.hpp>
 
 
-#include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 
 /*
@@ -23,7 +23,6 @@
 */
 
 #include <lua.hpp>
-
 #include <lauxlib.hpp>
 
 
@@ -672,7 +671,7 @@ static int skipBOM (LoadF *lf) {
   lf->n = 0;
   do {
     c = getc(lf->f);
-    if (c == EOF || c != *(const unsigned char *)p++) return c;
+    if (c == EOF || c != *(const uint8_t *)p++) return c;
     lf->buff[lf->n++] = c;  /* to be read by the parser */
   } while (*p != '\0');
   lf->n = 0;  /* prefix matched; discard it */
@@ -816,9 +815,9 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
     switch (lua_type(L, idx)) {
       case LUA_TNUMBER: {
         if (lua_isinteger(L, idx))
-          lua_pushfstring(L, "%I", (LUAI_UACINT)lua_tointeger(L, idx));
+          lua_pushfstring(L, "%I", (LUA_INTEGER)lua_tointeger(L, idx));
         else
-          lua_pushfstring(L, "%f", (LUAI_UACNUMBER)lua_tonumber(L, idx));
+          lua_pushfstring(L, "%f", (LUA_NUMBER)lua_tonumber(L, idx));
         break;
       }
       case LUA_TSTRING:
@@ -843,88 +842,6 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
   }
   return lua_tolstring(L, -1, len);
 }
-
-
-/*
-** {======================================================
-** Compatibility with 5.1 module functions
-** =======================================================
-*/
-#if defined(LUA_COMPAT_MODULE)
-
-static const char *luaL_findtable (lua_State *L, int idx,
-                                   const char *fname, int szhint) {
-  const char *e;
-  if (idx) lua_pushvalue(L, idx);
-  do {
-    e = strchr(fname, '.');
-    if (e == NULL) e = fname + strlen(fname);
-    lua_pushlstring(L, fname, e - fname);
-    if (lua_rawget(L, -2) == LUA_TNIL) {  /* no such field? */
-      lua_pop(L, 1);  /* remove this nil */
-      lua_createtable(L, 0, (*e == '.' ? 1 : szhint)); /* new table for field */
-      lua_pushlstring(L, fname, e - fname);
-      lua_pushvalue(L, -2);
-      lua_settable(L, -4);  /* set new table into field */
-    }
-    else if (!lua_istable(L, -1)) {  /* field has a non-table value? */
-      lua_pop(L, 2);  /* remove table and value */
-      return fname;  /* return problematic part of the name */
-    }
-    lua_remove(L, -2);  /* remove previous table */
-    fname = e + 1;
-  } while (*e == '.');
-  return NULL;
-}
-
-
-/*
-** Count number of elements in a luaL_Reg list.
-*/
-static int libsize (const luaL_Reg *l) {
-  int size = 0;
-  for (; l && l->name; l++) size++;
-  return size;
-}
-
-
-/*
-** Find or create a module table with a given name. The function
-** first looks at the LOADED table and, if that fails, try a
-** global variable with that name. In any case, leaves on the stack
-** the module table.
-*/
-LUALIB_API void luaL_pushmodule (lua_State *L, const char *modname,
-                                 int sizehint) {
-  luaL_findtable(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE, 1);
-  if (lua_getfield(L, -1, modname) != LUA_TTABLE) {  /* no LOADED[modname]? */
-    lua_pop(L, 1);  /* remove previous result */
-    /* try global variable (and create one if it does not exist) */
-    lua_pushglobaltable(L);
-    if (luaL_findtable(L, 0, modname, sizehint) != NULL)
-      luaL_error(L, "name conflict for module '%s'", modname);
-    lua_pushvalue(L, -1);
-    lua_setfield(L, -3, modname);  /* LOADED[modname] = new table */
-  }
-  lua_remove(L, -2);  /* remove LOADED table */
-}
-
-
-LUALIB_API void luaL_openlib (lua_State *L, const char *libname,
-                               const luaL_Reg *l, int nup) {
-  luaL_checkversion(L);
-  if (libname) {
-    luaL_pushmodule(L, libname, libsize(l));  /* get/create library table */
-    lua_insert(L, -(nup + 1));  /* move library table to below upvalues */
-  }
-  if (l)
-    luaL_setfuncs(L, l, nup);
-  else
-    lua_pop(L, nup);  /* remove upvalues */
-}
-
-#endif
-/* }====================================================== */
 
 /*
 ** set functions from list 'l' into table at top - 'nup'; each
@@ -1038,6 +955,6 @@ LUALIB_API void luaL_checkversion_ (lua_State *L, lua_Number ver, size_t sz) {
     luaL_error(L, "multiple Lua VMs detected");
   else if (*v != ver)
     luaL_error(L, "version mismatch: app. needs %f, Lua core provides %f",
-                  (LUAI_UACNUMBER)ver, (LUAI_UACNUMBER)*v);
+                  (LUA_NUMBER)ver, (LUA_NUMBER)*v);
 }
 

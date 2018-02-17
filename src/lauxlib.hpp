@@ -1,13 +1,9 @@
+#pragma once
 /*
 ** $Id: lauxlib.h,v 1.131 2016/12/06 14:54:31 roberto Exp $
 ** Auxiliary functions for building Lua libraries
 ** See Copyright Notice in lua.h
 */
-
-
-#ifndef lauxlib_h
-#define lauxlib_h
-
 
 #include <stddef.h>
 #include <stdio.h>
@@ -198,20 +194,6 @@ typedef struct luaL_Stream {
 /* }====================================================== */
 
 
-
-/* compatibility with old module system */
-#if defined(LUA_COMPAT_MODULE)
-
-LUALIB_API void (luaL_pushmodule) (lua_State *L, const char *modname,
-                                   int sizehint);
-LUALIB_API void (luaL_openlib) (lua_State *L, const char *libname,
-                                const luaL_Reg *l, int nup);
-
-#define luaL_register(L,n,l)	(luaL_openlib(L,(n),(l),0))
-
-#endif
-
-
 /*
 ** {==================================================================
 ** "Abstraction Layer" for basic report of messages and errors
@@ -235,30 +217,3 @@ LUALIB_API void (luaL_openlib) (lua_State *L, const char *libname,
 #endif
 
 /* }================================================================== */
-
-
-/*
-** {============================================================
-** Compatibility with deprecated conversions
-** =============================================================
-*/
-#if defined(LUA_COMPAT_APIINTCASTS)
-
-#define luaL_checkunsigned(L,a)	((lua_Unsigned)luaL_checkinteger(L,a))
-#define luaL_optunsigned(L,a,d)	\
-	((lua_Unsigned)luaL_optinteger(L,a,(lua_Integer)(d)))
-
-#define luaL_checkint(L,n)	((int)luaL_checkinteger(L, (n)))
-#define luaL_optint(L,n,d)	((int)luaL_optinteger(L, (n), (d)))
-
-#define luaL_checklong(L,n)	((long)luaL_checkinteger(L, (n)))
-#define luaL_optlong(L,n,d)	((long)luaL_optinteger(L, (n), (d)))
-
-#endif
-/* }============================================================ */
-
-
-
-#endif
-
-

@@ -1,12 +1,9 @@
+#pragma once
 /*
 ** $Id: ltm.h,v 2.22 2016/02/26 19:20:15 roberto Exp $
 ** Tag methods
 ** See Copyright Notice in lua.h
 */
-
-#ifndef ltm_h
-#define ltm_h
-
 
 #include <lobject.hpp>
 
@@ -70,7 +67,3 @@ LUAI_FUNC void luaT_trybinTM (lua_State *L, const TValue *p1, const TValue *p2,
                               StkId res, TMS event);
 LUAI_FUNC int luaT_callorderTM (lua_State *L, const TValue *p1,
                                 const TValue *p2, TMS event);
-
-
-
-#endif
