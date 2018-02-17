@@ -1,0 +1,400 @@
+.ROOT_PATH = '..'
+
+.windowsSDKBasePath = 'C:/Program Files (x86)/Windows Kits/8.1'
+
+#if exists(VS141BASEPATH)
+#import VS141BASEPATH
+#else
+.VS141BASEPATH = 'C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.12.25827'
+#endif
+
+Settings
+{
+#import SYSTEMROOT
+
+// Because git shell overwrites TMP and TEMP environment variables, running fbuild from post-checkout causes reparsing of the script
+//  which in turn causes full rebuild next time you try to build from Visual Studio
+
+// Hardcode TMP to default TMP paths -> %USERPROFILE%\AppData\Local\Temp when USERPROFILE exists, otherwise %SYSTEMROOT%\Temp
+// Create env. var. FASTBUILD_TMP if you want to override TMP folder (i.e. to direct it to RAM disk)
+
+#if exists(USERPROFILE)
+  #import USERPROFILE
+  .tempFolder = '$USERPROFILE$/AppData/Local/Temp'
+#else
+  .tempFolder = 'TMP=$SYSTEMROOT$/Temp'
+#endif
+#if exists(FASTBUILD_TMP)
+  #import FASTBUILD_TMP
+  .tempFolder = .FASTBUILD_TMP
+#endif
+
+  .Environment = { 'PATH=$windowsSDKBasePath$/Bin/x64',
+                   'SystemRoot=$SYSTEMROOT$',
+				   'TMP=$tempFolder$' }
+}
+
+
+.vs2017 =
+[
+  .environmentName = "vs2017"
+  .vsBasePath = '$VS141BASEPATH$'
+  .ucrtBasePath = 'C:/Program Files (x86)/Windows Kits/10'
+  .ucrtVersionPath = '10.0.10240.0/ucrt'
+  .includePaths = { "$ucrtBasePath$/Include/$ucrtVersionPath$",
+                    "$windowsSDKBasePath$/Include/shared",
+                    "$windowsSDKBasePath$/Include/um",
+                    "$windowsSDKBasePath$/Include/winrt" }
+  .compilerSpecificCompileOptions = ' /std:c++17'
+  .accurateVersion = '14.0.24720.00'
+  .compilerExtrax86Files = {}
+  .compilerExtrax64Files = {}
+  .vsBinPath = '$vsBasePath$/bin/HostX64/x64'
+  .vsLibPath = '$vsBasePath$/lib/x64'
+  .ltcgIncrementalOption = '/LTCG:incremental'
+  .compilerToolset = 'v141'
+  .PlatformToolset = .compilerToolset
+]
+
+.compilers = {.vs2017}
+
+.defines =
+{
+  'WIN32_LEAN_AND_MEAN',
+  'NOMINMAX',
+  '_HAS_CXX17',
+}
+
+.commonCompilerOptions = '/c '
+                       + ' /EHsc' // Enable exceptions
+                       + ' /fp:strict'
+                       + ' /nologo' // don't do excessive logging
+                       + ' /Z7' // include debug info
+                       + ' /FS' // to make it possible to write more cl processes to pdb file
+                       + ' /Zc:strictStrings' // Disable string literal type conversion
+                       + ' /Zc:rvalueCast' // Enforce type conversion rules
+                       + ' /U UNICODE'
+                       + ' /U _UNICODE'
+// for both linker and librarian
+.baseLinkerOptions = '/OUT:%2 %1'
+.LibrarianOptions  = .baseLinkerOptions
+.LinkerOptions     = .baseLinkerOptions
+.luaRunTargets = {}
+
+Compiler('rc-compiler')
+{
+  .Executable = '$windowsSDKBasePath$/Bin/x64/RC.Exe'
+  .ExtraFiles = {}
+  .CompilerFamily = 'custom'
+}
+
+ForEach (.compiler in .compilers)
+{
+  Using(.compiler)
+  .ArchX64 =
+  [
+    .ArchName = 'x64'
+    Compiler('$environmentName$-$ArchName$-compiler')
+    {
+      .Executable = '$vsBinPath$/cl.exe'
+      .ExtraFiles = .compilerExtrax64Files
+    }
+    .Compiler = '$environmentName$-$ArchName$-compiler'
+    .Librarian = '$vsBinPath$/lib.exe'
+    .Linker = '$vsBinPath$/link.exe'
+    .architectureSpecificLibrarianOptions = '/MACHINE:X64'
+    .architectureSpecificLinkerOptions = '/MACHINE:X64'
+    .ArchitectureExtraExecLinkerOptions = ' /LIBPATH:"$windowsSDKBasePath$/Lib/winv6.3/um/x64"'
+                                        + ' /LIBPATH:"$ucrtBasePath$/Lib/$ucrtVersionPath$/x64"'
+                                        + ' /LIBPATH:"$vsLibPath$"'
+    .architectureSpecificDefines = {}
+    .archSubsystemSuffix = ''
+    .Platform = .ArchName
+  ]
+
+  .buildSpecificIncludePaths = {}
+  .emptyVariable = ' '
+  .buildTypeSpecificExecLinkerOptionsSelector = 'emptyVariable'
+  .outPath = '$ROOT_PATH$/$environmentName$'
+
+  .BuildDebug =
+  [
+    .buildTypeSpecificCompileOptions = ' /MTd' // runtime library: Multithreaded debug
+                                     + ' /Od' // optimization disabled
+                                     + ' /Gy-' // no function level linking (required for edit and continue)
+    .subsystemOption = 'CONSOLE'
+    .buildTypeSpecificLinkerOptions = ' /DEBUG:fastlink /INCREMENTAL:NO'
+    .buildTypeSpecificLinkerAndLibrarianOptions = ' '
+    .buildTypeSpecificDefines =
+    {
+      '_DEBUG',
+      'DEBUG',
+      'LUA_USE_APICHECK'
+    }
+    .BuildName = 'Debug'
+    .Config = .BuildName
+  ]
+
+  .BuildRelease =
+  [
+    .buildTypeSpecificCompileOptions = ' /O2' // Maximise speed (Ox is full optimisation, might be tested)
+                                     + ' /Ob2' // inline function expansion: any suitable (/OB1 = only inline, /Ob0 = disabled)
+                                     + ' /MT' // runtime library: Multithreaded release
+                                     + ' /Gy-' // no function level linking (requred for edit and continue)
+                                     + ' /Oi' // enable intrinsic functions (Using intrinsic functions generates faster, but possibly larger code)
+                                     + ' /Ot' // favor fast code
+    .subsystemOption = 'WINDOWS'
+    .buildTypeSpecificLinkerOptions = ' /DEBUG:fastlink /INCREMENTAL:NO'
+    .buildTypeSpecificLinkerAndLibrarianOptions = '$ltcgIncrementalOption$' // use fast link code generation
+    .buildTypeSpecificDefines =
+    {
+      'NDEBUG',
+      'LUA_USE_APICHECK'
+    }
+    .BuildName = 'Release'
+    .Config = .BuildName
+  ]
+  
+  .librarySpecificCompileOption = ' '
+  
+  .luaConfig =
+  [
+    .projectName = 'lua'
+    .librarySpecificIncludePaths = {'$ROOT_PATH$/src'}
+    .librarySpecificDefines  = {}
+    .projectRootPath = '$ROOT_PATH$/src'
+  ]
+  
+  .luarunConfig =
+  [
+    Using(.luaConfig)
+   .projectName = 'lua-run'
+   .projectRootPath = '$ROOT_PATH$/src'
+   .ProjectInputPaths = {}
+   .ProjectFiles = '$ROOT_PATH$/src/lua.cpp'
+   .LocalDebuggerCommand = '$ROOT_PATH$/bin/^$(Configuration)^$(Platform)$environmentName$/lua-run.exe'
+  ]
+
+  .luatestConfig =
+  [
+    .projectName = 'lua-test'
+    .librarySpecificIncludePaths = {'$ROOT_PATH$/src'
+                                    '$ROOT_PATH$/tests'
+                                    '$ROOT_PATH$/libraries/UnitTest++'
+                                    '$ROOT_PATH$/libraries'}
+    .librarySpecificDefines = {}
+    .projectRootPath = '$ROOT_PATH$/tests'
+    .ProjectFiles = '$ROOT_PATH$/src/lua.cpp'
+    .LocalDebuggerCommand = '$ROOT_PATH$/bin/^$(Configuration)^$(Platform)$environmentName$/lua-test.exe'
+  ]
+
+  .unittestConfig =
+  [
+    .projectName = 'unit-test'
+    .projectRootPath = '$ROOT_PATH$/libraries/UnitTest++'
+    .librarySpecificIncludePaths = {'$ROOT_PATH$/libraries/UnitTest++'}
+    .librarySpecificDefines = {}
+  ]
+
+  .BinaryTypes = {.ArchX64}
+
+  // Trick to overcome the problem of not being able to make empty array of struct
+  // see methods/visual-studio-project-configurations.bff
+  // see https://github.com/fastbuild/fastbuild/issues/15
+  .BuildTypesWithoutDebug =
+  {
+    .BuildRelease
+  }
+  .BuildTypes = .BuildTypesWithoutDebug
+  .BuildTypes + .BuildDebug
+
+  ForEach(.BinaryType in .BinaryTypes)
+  {
+    Using(.BinaryType)
+    ForEach(.BuildType in .BuildTypes)
+    {
+      Using(.BuildType)
+      .TargetName = '$BuildName$$ArchName$'
+      .commonLibrary =
+      [
+        .includePaths + '$vsBasePath$/include/'
+        .defines + .architectureSpecificDefines
+                 + .buildTypeSpecificDefines
+        .commonCompilerOptions + ' $buildTypeSpecificCompileOptions$'
+                               + ' $compilerSpecificCompileOptions$'
+        .CompilerOptions = '%1 /Fo"%2" $commonCompilerOptions$'
+        .CompilerInputPattern = '*.c*'
+        .LinkerOptions + ' $architectureSpecificLinkerOptions$'
+                       + ' $buildTypeSpecificLinkerOptions$'
+                       + ' $buildTypeSpecificLinkerAndLibrarianOptions$'
+        .LibrarianOptions + ' $architectureSpecificLibrarianOptions$'
+                          + ' $buildTypeSpecificLinkerAndLibrarianOptions$'
+      ]
+
+      Library('$environmentName$-$TargetName$-lua')
+      {
+        Using(.commonLibrary)
+        Using(.luaConfig)
+        .CompilerInputPath = '$ROOT_PATH$/src'
+        .CompilerInputPattern = "*.cpp"
+        .CompilerInputPathRecurse = true
+        .CompilerInputExcludedFiles = {'$ROOT_PATH$/src/lua.cpp'}
+        .CompilerOutputPath = '$outPath$/$TargetName$/lua/'
+        .LibrarianOutput   = '$outPath$/$TargetName$/lua.lib'
+        .commonCompilerOptions + ' /bigobj'
+        .CompilerOptions = '%1 /Fo"%2" $commonCompilerOptions$'
+        #include "methods/transfer-include-and-defines-to-compile-flags.bff"
+      }
+
+      ObjectList('$environmentName$-$TargetName$-lua-run-files')
+      {
+        Using(.commonLibrary)
+        Using(.luarunConfig)
+        .CompilerInputFiles = '$ROOT_PATH$/src/lua.cpp'
+        .CompilerOutputPath = '$outPath$/$TargetName$/lua-run/'
+        .commonCompilerOptions + ' /bigobj'
+        .CompilerOptions = '%1 /Fo"%2" $commonCompilerOptions$'
+        #include "methods/transfer-include-and-defines-to-compile-flags.bff"
+      }
+
+      .buildTypeSpecificExecLinkerOptionsSelectorValue = ."$buildTypeSpecificExecLinkerOptionsSelector$"
+      .commonExecLinkerOptions = '$ArchitectureExtraExecLinkerOptions$'
+                               + ' $buildTypeSpecificExecLinkerOptionsSelectorValue$'
+
+      .luaRunTargets + '$environmentName$-$TargetName$-lua-run'
+
+      Executable('$environmentName$-$TargetName$-lua-run-internal')
+      {
+        Using(.commonLibrary)
+        .LinkerOutput = '$ROOT_PATH$/bin/$TargetName$$environmentName$/lua-run.exe'
+        .LinkerOptions + ' $commonExecLinkerOptions$'
+                       + ' /ENTRY:"mainCRTStartup"'
+                       + ' /SUBSYSTEM:$subsystemOption$$archSubsystemSuffix$'
+        .Libraries =
+        {
+          '$environmentName$-$TargetName$-lua',
+          '$environmentName$-$TargetName$-lua-run-files'
+        }
+      }
+
+      .luaRunTargets + '$environmentName$-$TargetName$-lua-run-internal'
+
+      Alias('$environmentName$-$TargetName$-lua-run')
+      {
+        .Targets = .luaRunTargets
+      }
+
+      Library('$environmentName$-$TargetName$-unit-test')
+      {
+        Using(.commonLibrary)
+        Using(.unittestConfig)
+        .CompilerInputPath = '$ROOT_PATH$/libraries/UnitTest++'
+        .CompilerInputExcludePath = '$ROOT_PATH$/libraries/UnitTest++/Posix'
+        .CompilerOutputPath = '$outPath$/$TargetName$/unit-test/'
+        .LibrarianOutput   = '$outPath$/$TargetName$/unit-test.lib'
+        #include "methods/transfer-include-and-defines-to-compile-flags.bff"
+      }
+      
+      Unity('$environmentName$-$TargetName$-lua-test-unity')
+      {
+        .UnityInputPath = '$ROOT_PATH$/tests'
+        .UnityInputPattern	= '*.cpp'
+        .UnityInputPathRecurse = true
+        .UnityOutputPath = '$outPath$/$TargetName$/test/'
+        .UnityOutputPattern	= 'Unity*.cpp'
+        .UnityNumFiles = 30
+        .UnityPCH	= 'TestCommon.hpp'
+      }
+      
+      ObjectList('$environmentName$-$TargetName$-lua-test-files')
+      {
+        Using(.commonLibrary)
+        Using(.luatestConfig)
+        .CompilerInputUnity = '$environmentName$-$TargetName$-lua-test-unity'
+        .CompilerOutputPath = '$outPath$/$TargetName$/lua-test/'
+        .commonCompilerOptions + ' /bigobj'
+                               + ' /Zm300'
+                               + ' /Yu"TestCommon.hpp"'
+        .CompilerOptions = '%1' // input
+                         + ' /Fo"%2"' // output
+                         + ' $commonCompilerOptions$'
+                         + ' /Fp"$outPath$/$TargetName$/lua-test/TestCommon.pch"' // precompile header usage
+                         + ' /FI"TestCommon.hpp"' // force include the precompiled header
+        .PCHInputFile = '$ROOT_PATH$/tests/TestCommon.cpp'
+        .PCHOutputFile = '$outPath$/$TargetName$/lua-test/TestCommon.pch'
+        .PCHOptions = '%1 /Fo"%3" /Yc"TestCommon.hpp" /Fp"%2" $commonCompilerOptions$'
+        #include "methods/transfer-include-and-defines-to-compile-flags.bff"
+        #include "methods/transfer-include-and-defines-to-pch-compile-flags.bff"
+      }
+      
+      Executable('$environmentName$-$TargetName$-lua-test')
+      {
+        Using(.commonLibrary)
+        .CompilerInputExcludedFiles = {'$ROOT_PATH$/src/lua.cpp'}
+        .LinkerOutput = '$ROOT_PATH$/bin/$TargetName$$environmentName$/lua-test.exe'
+        .LinkerOptions + ' $commonExecLinkerOptions$'
+                       + ' /ENTRY:"mainCRTStartup"'
+                       + ' /SUBSYSTEM:CONSOLE'
+        .Libraries =
+        {
+          '$environmentName$-$TargetName$-lua',
+          '$environmentName$-$TargetName$-lua-test-files',
+          '$environmentName$-$TargetName$-unit-test'
+        }
+      }
+      
+    }
+  }
+
+  .PathToSolution = "$ROOT_PATH$/$environmentName$"
+  .defaultProjectBuildCommand = 'fbuild -vs $environmentName$-^$(Configuration)^$(Platform)-^$(ProjectName) -config "$ROOT_PATH$/fastbuild/fbuild.bff"'
+  .defaultProjectRebuildCommand = '$defaultProjectBuildCommand$ -clean'
+
+  .defaultProject =
+  [
+    .ProjectInputPaths = {'.'}
+    .ProjectAllowedFileExtensions = { '.hpp', '.h' '.cpp' '.c' '.rc' '.cs' }
+    .ProjectBuildCommand = .defaultProjectBuildCommand
+    .ProjectRebuildCommand = .defaultProjectRebuildCommand
+    .PlatformToolset = .compilerToolset
+  ]
+
+  .projectSpecificSettings = { .luaConfig,
+                               .luarunConfig,
+                               .luatestConfig,
+                               .unittestConfig }
+
+  ForEach(.project in .projectSpecificSettings)
+  {
+    Using(.project)
+    VCXProject('$environmentName$-$projectName$')
+    {
+      Using(.defaultProject)
+      .ProjectOutput = '$PathToSolution$/$projectName$.vcxproj'
+      .ProjectRebuildCommand = '$ProjectBuildCommand$ -clean'
+      .ProjectBasePath = .projectRootPath
+      .ProjectInputPaths = .projectRootPath
+      .inlineCppDefinition = 'INLINE_CPP='
+      Using(.project)
+      #include "methods/visual-studio-project-configurations.bff"
+    }
+  }
+
+  VSSolution('$environmentName$-solution')
+  {
+    .SolutionOutput = '$PathToSolution$/Lua++.sln'
+    .SolutionProjects =
+    {
+      '$environmentName$-lua',
+      '$environmentName$-lua-run',
+      '$environmentName$-lua-test',
+      '$environmentName$-unit-test',
+    }
+
+    .SolutionBuildProject = '$environmentName$-lua-run'
+    .SolutionVisualStudioVersion = '$accurateVersion$'
+    .SolutionMinimumVisualStudioVersion = '$accurateVersion$'
+    #include "methods/generate-project-configs.bff"
+    .SolutionConfigs = .ProjectConfigs
+  }
+}

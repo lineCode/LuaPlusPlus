@@ -1,0 +1,26 @@
+// I had to choose one of the build type so the .ProjectConfigs variable
+// is initialised as array of structs, this is limitation of fastbuild
+// that might be solved later, more: https://github.com/fastbuild/fastbuild/issues/15
+.BuildDebugWin64 =
+[
+  Using(.BuildDebug)
+  Using(.ArchX64)
+  #include "transfer-include-and-defines-into-intellisense-definitions.bff"
+]
+
+.ProjectConfigs = { .BuildDebugWin64}
+
+ForEach(.BinaryType in .BinaryTypes)
+{
+  ForEach(.BuildType in .BuildTypesWithoutDebug)
+  {
+    .Addition =
+    [
+      Using(.BinaryType)
+      Using(.BuildType)
+      #include "transfer-include-and-defines-into-intellisense-definitions.bff"
+    ]
+    ^ProjectConfigs + .Addition
+  }
+  ^ProjectConfigs = .ProjectConfigs
+}

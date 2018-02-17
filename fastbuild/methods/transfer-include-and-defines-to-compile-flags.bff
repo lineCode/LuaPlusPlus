@@ -1,0 +1,26 @@
+ForEach(.includePath in .includePaths)
+{
+  ^CompilerOptions + ' /I"$includePath$"'
+}
+
+ForEach(.includePath in .librarySpecificIncludePaths)
+{
+  ^CompilerOptions + ' /I"$includePath$"'
+}
+
+ForEach(.includePath in .buildSpecificIncludePaths)
+{
+  ^CompilerOptions + ' /I"$includePath$"'
+}
+
+ForEach(.define in .defines)
+{
+  ^CompilerOptions + ' /D$define$'
+}
+
+ForEach(.define in .librarySpecificDefines)
+{
+  ^CompilerOptions + ' /D$define$'
+}
+
+.CompilerOptions + ' ' + .librarySpecificCompileOption

@@ -1,0 +1,24 @@
+ForEach(.includePath in .includePaths)
+{
+  ^PCHOptions + ' /I"$includePath$"'
+}
+
+ForEach(.includePath in .librarySpecificIncludePaths)
+{
+  ^PCHOptions + ' /I"$includePath$"'
+}
+
+ForEach(.includePath in .buildSpecificIncludePaths)
+{
+  ^PCHOptions + ' /I"$includePath$"'
+}
+
+ForEach(.define in .defines)
+{
+  ^PCHOptions + ' /D$define$'
+}
+
+ForEach(.define in .librarySpecificDefines)
+{
+  ^PCHOptions + ' /D$define$'
+}

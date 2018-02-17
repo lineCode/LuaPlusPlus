@@ -1,0 +1,2 @@
+#!/bin/sh
+fastbuild/create_solution.sh

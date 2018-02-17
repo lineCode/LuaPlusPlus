@@ -1,0 +1,26 @@
+.IncludeSearchPath = ' '
+.PreprocessorDefinitions = ' '
+
+.defines + .architectureSpecificDefines
+         + .buildTypeSpecificDefines
+         
+.defines2 =
+{
+  'WIN32_LEAN_AND_MEAN'
+  '_HAS_CXX17',
+}
+
+ForEach(.includePath in .includePaths)
+{
+   ^IncludeSearchPath + ';"$includePath$"'
+}
+
+ForEach(.define in .defines)
+{
+  ^PreprocessorDefinitions + ';$define$'
+}
+
+ForEach(.define in .defines2)
+{
+  ^PreprocessorDefinitions + ';$define$'
+}

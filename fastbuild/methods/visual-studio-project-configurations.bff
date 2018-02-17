@@ -1,0 +1,6 @@
+.defines = .librarySpecificDefines
+.includePaths = .librarySpecificIncludePaths
+.IncludeSearchPath = ' '
+.PreprocessorDefinitions = ' '
+
+#include "generate-project-configs.bff"
