@@ -191,7 +191,7 @@ static int unpack (lua_State *L) {
   lua_Integer e = luaL_opt(L, luaL_checkinteger, 3, luaL_len(L, 1));
   if (i > e) return 0;  /* empty range */
   n = (lua_Unsigned)e - i;  /* number of elements minus 1 (avoid overflows) */
-  if (n >= (unsigned int)INT_MAX  || !lua_checkstack(L, (int)(++n)))
+  if (n >= (uint32_t)INT_MAX  || !lua_checkstack(L, (int)(++n)))
     return luaL_error(L, "too many results to unpack");
   for (; i < e; i++) {  /* push arg[i..e - 1] (to avoid overflows) */
     lua_geti(L, 1, i);
@@ -214,7 +214,7 @@ static int unpack (lua_State *L) {
 
 
 /* type for array indices */
-typedef unsigned int IdxT;
+typedef uint32_t IdxT;
 
 
 /*
@@ -227,8 +227,8 @@ typedef unsigned int IdxT;
 
 #include <time.h>
 
-/* size of 'e' measured in number of 'unsigned int's */
-#define sof(e)		(sizeof(e) / sizeof(unsigned int))
+/* size of 'e' measured in number of 'uint32_t's */
+#define sof(e)		(sizeof(e) / sizeof(uint32_t))
 
 /*
 ** Use 'time' and 'clock' as sources of "randomness". Because we don't
@@ -236,13 +236,13 @@ typedef unsigned int IdxT;
 ** anything without risking overflows. A safe way to use their values
 ** is to copy them to an array of a known type and use the array values.
 */
-static unsigned int l_randomizePivot (void) {
+static uint32_t l_randomizePivot (void) {
   clock_t c = clock();
   time_t t = time(NULL);
-  unsigned int buff[sof(c) + sof(t)];
-  unsigned int i, rnd = 0;
-  memcpy(buff, &c, sof(c) * sizeof(unsigned int));
-  memcpy(buff + sof(c), &t, sof(t) * sizeof(unsigned int));
+  uint32_t buff[sof(c) + sof(t)];
+  uint32_t i, rnd = 0;
+  memcpy(buff, &c, sof(c) * sizeof(uint32_t));
+  memcpy(buff + sof(c), &t, sof(t) * sizeof(uint32_t));
   for (i = 0; i < sof(buff); i++)
     rnd += buff[i];
   return rnd;
@@ -324,7 +324,7 @@ static IdxT partition (lua_State *L, IdxT lo, IdxT up) {
 ** Choose an element in the middle (2nd-3th quarters) of [lo,up]
 ** "randomized" by 'rnd'
 */
-static IdxT choosePivot (IdxT lo, IdxT up, unsigned int rnd) {
+static IdxT choosePivot (IdxT lo, IdxT up, uint32_t rnd) {
   IdxT r4 = (up - lo) / 4;  /* range/4 */
   IdxT p = rnd % (r4 * 2) + (lo + r4);
   lua_assert(lo + r4 <= p && p <= up - r4);
@@ -336,7 +336,7 @@ static IdxT choosePivot (IdxT lo, IdxT up, unsigned int rnd) {
 ** QuickSort algorithm (recursive function)
 */
 static void auxsort (lua_State *L, IdxT lo, IdxT up,
-                                   unsigned int rnd) {
+                                   uint32_t rnd) {
   while (lo < up) {  /* loop for tail recursion */
     IdxT p;  /* Pivot index */
     IdxT n;  /* to be used later */

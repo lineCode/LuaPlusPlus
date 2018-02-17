@@ -130,7 +130,7 @@ struct global_State
   lu_mem GCestimate;  /* an estimate of the non-garbage memory in use */
   stringtable strt;  /* hash table for strings */
   TValue l_registry;
-  unsigned int seed;  /* randomized seed for hashes */
+  uint32_t seed;  /* randomized seed for hashes */
   uint8_t currentwhite;
   uint8_t gcstate;  /* state of garbage collector */
   uint8_t gckind;  /* kind of GC running */
@@ -146,7 +146,7 @@ struct global_State
   GCObject *tobefnz;  /* list of userdata to be GC */
   GCObject *fixedgc;  /* list of objects not to be collected */
   struct lua_State *twups;  /* list of threads with open upvalues */
-  unsigned int gcfinnum;  /* number of finalizers to call in each GC step */
+  uint32_t gcfinnum;  /* number of finalizers to call in each GC step */
   int gcpause;  /* size of pause between successive GCs */
   int gcstepmul;  /* GC 'granularity' */
   lua_CFunction panic;  /* to be called in unprotected errors */

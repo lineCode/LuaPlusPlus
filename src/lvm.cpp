@@ -1262,7 +1262,7 @@ void luaV_execute (lua_State *L) {
       vmcase(OP_SETLIST) {
         int n = GETARG_B(i);
         int c = GETARG_C(i);
-        unsigned int last;
+        uint32_t last;
         Table *h;
         if (n == 0) n = cast_int(L->top - ra) - 1;
         if (c == 0) {

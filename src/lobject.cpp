@@ -35,7 +35,7 @@ LUAI_DDEF const TValue luaO_nilobject_ = {NILCONSTANT};
 ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
 ** eeeee != 0 and (xxx) otherwise.
 */
-int luaO_int2fb (unsigned int x) {
+int luaO_int2fb (uint32_t x) {
   int e = 0;  /* exponent */
   if (x < 8) return x;
   while (x >= (8 << 4)) {  /* coarse steps */
@@ -59,7 +59,7 @@ int luaO_fb2int (int x) {
 /*
 ** Computes ceil(log2(x))
 */
-int luaO_ceillog2 (unsigned int x) {
+int luaO_ceillog2 (uint32_t x) {
   static const uint8_t log_2[256] = {  /* log_2[i] = ceil(log2(i - 1)) */
     0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
     6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
@@ -346,7 +346,7 @@ int luaO_utf8esc (char *buff, unsigned long x) {
   if (x < 0x80)  /* ascii? */
     buff[UTF8BUFFSZ - 1] = cast(char, x);
   else {  /* need continuation bytes */
-    unsigned int mfb = 0x3f;  /* maximum that fits in first byte */
+    uint32_t mfb = 0x3f;  /* maximum that fits in first byte */
     do {  /* add continuation bytes */
       buff[UTF8BUFFSZ - (n++)] = cast(char, 0x80 | (x & 0x3f));
       x >>= 6;  /* remove added bits */

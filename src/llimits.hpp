@@ -41,11 +41,11 @@ using l_mem = ptrdiff_t;
 
 
 /*
-** conversion of pointer to unsigned integer:
+** conversion of pointer to uint32_t:
 ** this is for hashing only; there is no problem if the integer
 ** cannot hold the whole pointer value
 */
-#define point2uint(p)	((unsigned int)((size_t)(p) & UINT_MAX))
+#define point2uint(p)	((uint32_t)((size_t)(p) & UINT_MAX))
 
 
 

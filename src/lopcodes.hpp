@@ -99,7 +99,7 @@ enum OpMode {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 #define SETARG_Ax(i,v)	setarg(i, v, POS_Ax, SIZE_Ax)
 
 #define GETARG_sBx(i)	(GETARG_Bx(i)-MAXARG_sBx)
-#define SETARG_sBx(i,b)	SETARG_Bx((i),cast(unsigned int, (b)+MAXARG_sBx))
+#define SETARG_sBx(i,b)	SETARG_Bx((i),cast(uint32_t, (b)+MAXARG_sBx))
 
 
 #define CREATE_ABC(o,a,b,c)	((cast(Instruction, o)<<POS_OP) \

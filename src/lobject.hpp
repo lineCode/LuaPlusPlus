@@ -287,7 +287,7 @@ struct TString : GCObject
 {
   uint8_t extra;  /* reserved words for short strings; "has hash" for longs */
   uint8_t shrlen;  /* length for short strings */
-  unsigned int hash;
+  uint32_t hash;
   union {
     size_t lnglen;  /* length for long strings */
     struct TString *hnext;  /* linked list for hash table */
@@ -490,7 +490,7 @@ struct Table : GCObject
 {
   uint8_t flags;  /* 1<<p means tagmethod(p) is not present */
   uint8_t lsizenode;  /* log2 of size of 'node' array */
-  unsigned int sizearray;  /* size of 'array' array */
+  uint32_t sizearray;  /* size of 'array' array */
   TValue *array;  /* array part */
   Node *node;
   Node *lastfree;  /* any free position is before this position */
@@ -522,10 +522,10 @@ LUAI_DDEC const TValue luaO_nilobject_;
 /* size of buffer for 'luaO_utf8esc' function */
 #define UTF8BUFFSZ	8
 
-LUAI_FUNC int luaO_int2fb (unsigned int x);
+LUAI_FUNC int luaO_int2fb (uint32_t x);
 LUAI_FUNC int luaO_fb2int (int x);
 LUAI_FUNC int luaO_utf8esc (char *buff, unsigned long x);
-LUAI_FUNC int luaO_ceillog2 (unsigned int x);
+LUAI_FUNC int luaO_ceillog2 (uint32_t x);
 LUAI_FUNC void luaO_arith (lua_State *L, int op, const TValue *p1,
                            const TValue *p2, TValue *res);
 LUAI_FUNC size_t luaO_str2num (const char *s, TValue *o);

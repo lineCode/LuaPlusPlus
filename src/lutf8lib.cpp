@@ -37,10 +37,10 @@ static lua_Integer u_posrelat (lua_Integer pos, size_t len) {
 ** Decode one UTF-8 sequence, returning NULL if byte sequence is invalid.
 */
 static const char *utf8_decode (const char *o, int *val) {
-  static const unsigned int limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
+  static const uint32_t limits[] = {0xFF, 0x7F, 0x7FF, 0xFFFF};
   const uint8_t *s = (const uint8_t *)o;
-  unsigned int c = s[0];
-  unsigned int res = 0;  /* final result */
+  uint32_t c = s[0];
+  uint32_t res = 0;  /* final result */
   if (c < 0x80)  /* ascii? */
     res = c;
   else {

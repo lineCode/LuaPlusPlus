@@ -46,8 +46,8 @@ int luaS_eqlngstr (TString *a, TString *b) {
 }
 
 
-unsigned int luaS_hash (const char *str, size_t l, unsigned int seed) {
-  unsigned int h = seed ^ cast(unsigned int, l);
+uint32_t luaS_hash (const char *str, size_t l, uint32_t seed) {
+  uint32_t h = seed ^ cast(uint32_t, l);
   size_t step = (l >> LUAI_HASHLIMIT) + 1;
   for (; l >= step; l -= step)
     h ^= ((h<<5) + (h>>2) + cast_byte(str[l - 1]));
@@ -55,7 +55,7 @@ unsigned int luaS_hash (const char *str, size_t l, unsigned int seed) {
 }
 
 
-unsigned int luaS_hashlongstr (TString *ts) {
+uint32_t luaS_hashlongstr (TString *ts) {
   lua_assert(ts->tt == LUA_TLNGSTR);
   if (ts->extra == 0) {  /* no hash? */
     ts->hash = luaS_hash(getstr(ts), ts->u.lnglen, ts->hash);
@@ -81,7 +81,7 @@ void luaS_resize (lua_State *L, int newsize) {
     tb->hash[i] = NULL;
     while (p) {  /* for each node in the list */
       TString *hnext = p->u.hnext;  /* save next */
-      unsigned int h = lmod(p->hash, newsize);  /* new position */
+      uint32_t h = lmod(p->hash, newsize);  /* new position */
       p->u.hnext = tb->hash[h];  /* chain it */
       tb->hash[h] = p;
       p = hnext;
@@ -130,7 +130,7 @@ void luaS_init (lua_State *L) {
 /*
 ** creates a new string object
 */
-static TString *createstrobj (lua_State *L, size_t l, int tag, unsigned int h) {
+static TString *createstrobj (lua_State *L, size_t l, int tag, uint32_t h) {
   TString *ts;
   GCObject *o;
   size_t totalsize;  /* total size of TString object */
@@ -167,7 +167,7 @@ void luaS_remove (lua_State *L, TString *ts) {
 static TString *internshrstr (lua_State *L, const char *str, size_t l) {
   TString *ts;
   global_State *g = L->globalState;
-  unsigned int h = luaS_hash(str, l, g->seed);
+  uint32_t h = luaS_hash(str, l, g->seed);
   TString **list = &g->strt.hash[lmod(h, g->strt.size)];
   lua_assert(str != NULL);  /* otherwise 'memcmp'/'memcpy' are undefined */
   for (ts = *list; ts != NULL; ts = ts->u.hnext) {
@@ -217,7 +217,7 @@ TString *luaS_newlstr (lua_State *L, const char *str, size_t l) {
 ** check hits.
 */
 TString *luaS_new (lua_State *L, const char *str) {
-  unsigned int i = point2uint(str) % STRCACHE_N;  /* hash */
+  uint32_t i = point2uint(str) % STRCACHE_N;  /* hash */
   int j;
   TString **p = L->globalState->strcache[i];
   for (j = 0; j < STRCACHE_M; j++) {

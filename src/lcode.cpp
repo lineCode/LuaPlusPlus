@@ -319,7 +319,7 @@ int luaK_codeABC (FuncState *fs, OpCode o, int a, int b, int c) {
 /*
 ** Format and emit an 'iABx' instruction.
 */
-int luaK_codeABx (FuncState *fs, OpCode o, int a, unsigned int bc) {
+int luaK_codeABx (FuncState *fs, OpCode o, int a, uint32_t bc) {
   lua_assert(getOpMode(o) == iABx || getOpMode(o) == iAsBx);
   lua_assert(getCMode(o) == OpArgN);
   lua_assert(a <= MAXARG_A && bc <= MAXARG_Bx);
