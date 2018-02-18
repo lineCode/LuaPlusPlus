@@ -8,6 +8,7 @@
 #include <lobject.hpp>
 #include <lstate.hpp>
 #include <type_traits>
+#include <lutils.hpp>
 
 /*
 ** Collectable objects may have one of three colors: white, which
@@ -21,8 +22,6 @@
 ** the collection cycle. These lists have no meaning when the invariant
 ** is not being enforced (e.g., sweep phase).
 */
-
-
 
 /* how much to allocate before next GC step */
 #if !defined(GCSTEPSIZE)
@@ -139,7 +138,7 @@ public:
   static T* luaC_newobj(lua_State* L, int tt, size_t sz)
   {
     static_assert(std::is_base_of<GCObject, T>::value);
-    static_assert(!std::is_same<decltype(&LGCFactory::luaC_free(std::declval<lua_State*>(), std::declval<T*>())), void>::value);
+    static_assert(std::is_same<decltype(LGCFactory::luaC_free(std::declval<T*>())), void>::value);
 
     T* object = static_cast<T*>(LMem<void>::luaM_newobject(L, novariant(tt), sz));
     global_State* g = L->globalState;
@@ -150,15 +149,25 @@ public:
     return object;
   }
 
-  static void luaC_free(lua_State* L, Proto* funcion);
-  static void luaC_free(lua_State* L, LClosure* closure);
-  static void luaC_free(lua_State* L, CClosure* closure);
-  static void luaC_free(lua_State* L, Table* table);
-  static void luaC_free(lua_State* L, lua_State* L1);
-  static void luaC_free(lua_State* L, Udata* udata);
-  static void luaC_free(lua_State* L, TString* string);
-  static void luaC_freeShortTString(lua_State* L, TString* string);
-  static void luaC_freeLongTString(lua_State* L, TString* string);
+  template<class T>
+  static void luaC_freeobj(lua_State* L, T* obj)
+  {
+    Lua::ScopedValueSetter<lua_State*> stateGuard(LGCFactory::active_state, L);
+    LGCFactory::luaC_free(obj);
+  }
+
+  static lua_State* getActiveState() { return LGCFactory::active_state; }
+
+private:
+
+  static thread_local lua_State* active_state;
+  static void luaC_free(Proto* funcion);
+  static void luaC_free(LClosure* closure);
+  static void luaC_free(CClosure* closure);
+  static void luaC_free(Table* table);
+  static void luaC_free(lua_State* L1);
+  static void luaC_free(Udata* udata);
+  static void luaC_free(TString* string);
 };
 
 LUAI_FUNC void luaC_fix (lua_State *L, GCObject *o);

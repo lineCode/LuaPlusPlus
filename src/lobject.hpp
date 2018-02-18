@@ -288,7 +288,7 @@ class TString : public GCObject
   friend class LGCFactory;
   friend struct TStringAlign;
   TString() = default;
-  ~TString() = default;
+  ~TString();
 public:
   TString(const TString&) = delete;
   TString(TString&&) = delete;
@@ -346,7 +346,7 @@ class Udata : public GCObject
   friend class LGCFactory;
   friend struct UDataAlign;
   Udata() = default;
-  ~Udata() = default;
+  ~Udata();
 public:
   Udata(const Udata&) = delete;
   Udata(Udata&&) = delete;
@@ -421,7 +421,7 @@ class Proto : public GCObject
 {
   friend class LGCFactory;
   Proto() = default;
-  ~Proto() = default;
+  ~Proto();
 public:
   Proto(const Proto&) = delete;
   Proto(Proto&&) = delete;
@@ -481,7 +481,7 @@ class CClosure : public ClosureHeader
 {
   friend class LGCFactory;
   CClosure() = default;
-  ~CClosure() = default;
+  ~CClosure();
 public:
   CClosure(const CClosure&) = delete;
   CClosure(CClosure&&) = delete;
@@ -496,7 +496,7 @@ class LClosure : public ClosureHeader
 {
   friend class LGCFactory;
   LClosure() = default;
-  ~LClosure() = default;
+  ~LClosure();
 public:
   LClosure(const LClosure&) = delete;
   LClosure(LClosure&&) = delete;
@@ -555,7 +555,7 @@ class Table : public GCObject
 {
   friend class LGCFactory;
   Table() = default;
-  ~Table() = default;
+  ~Table();
 public:
   Table(const Table&) = delete;
   Table(Table&&) = delete;

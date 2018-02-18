@@ -24,10 +24,72 @@
 #include <lstate.hpp>
 #include <lstring.hpp>
 #include <lvm.hpp>
-
+#include <ltable.hpp>
 
 
 LUAI_DDEF const TValue luaO_nilobject_ = {NILCONSTANT};
+
+TString::~TString()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  switch (this->tt)
+  {
+    case LUA_TSHRSTR:
+    {
+      luaS_remove(L, this);  /* remove it from hash table */
+      LMem<TString>::luaM_freemem(L, this, sizelstring(this->shrlen));
+      break;
+    }
+    case LUA_TLNGSTR:
+    {
+      LMem<TString>::luaM_freemem(L, this, sizelstring(this->u.lnglen));
+      break;
+    }
+    default: lua_assert(false);
+  }
+}
+
+Udata::~Udata()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  LMem<Udata>::luaM_freemem(L, this, sizeudata(this));
+}
+
+Proto::~Proto()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  LMem<Instruction>::luaM_freearray(L, this->code, this->sizecode);
+  LMem<Proto*>::luaM_freearray(L, this->p, this->sizep);
+  LMem<TValue>::luaM_freearray(L, this->k, this->sizek);
+  LMem<int>::luaM_freearray(L, this->lineinfo, this->sizelineinfo);
+  LMem<LocVar>::luaM_freearray(L, this->locvars, this->sizelocvars);
+  LMem<Upvaldesc>::luaM_freearray(L, this->upvalues, this->sizeupvalues);
+  LMem<Proto>::luaM_free(L, this);
+}
+
+CClosure::~CClosure()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  LMem<CClosure>::luaM_freemem(L, this, sizeCClosure(this->nupvalues));
+}
+
+LClosure::~LClosure()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  for (int32_t i = 0; i < this->nupvalues; i++)
+    if (UpVal* upValue = this->upvals[i])
+      luaC_upvdeccount(L, upValue);
+  LMem<LClosure>::luaM_freemem(L, this, sizeLClosure(this->nupvalues));
+}
+
+Table::~Table()
+{
+  lua_State* L = LGCFactory::getActiveState();
+  if (!isdummy(this))
+    LMem<Node>::luaM_freearray(L, this->node, cast(size_t, sizenode(this)));
+  LMem<TValue>::luaM_freearray(L, this->array, this->sizearray);
+  LMem<Table>::luaM_free(L, this);
+}
 
 /*
 ** converts an integer to a "floating point byte", represented as

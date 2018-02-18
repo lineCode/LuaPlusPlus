@@ -10,6 +10,7 @@
 #include <llimits.hpp>
 #include <lua.hpp>
 #include <lallocator.hpp>
+#include <type_traits>
 
 extern void luaM_toobig(lua_State* L);
 extern void luaM_addGCDebt(lua_State* L, size_t size, size_t realosize);
@@ -35,6 +36,9 @@ public:
   */
   static T* luaM_reallocv(lua_State* L, T* block, size_t on, size_t n, size_t e)
   {
+    static_assert(std::is_trivially_constructible<T>::value);
+    static_assert(std::is_trivially_destructible<T>::value);
+
     ((sizeof(n) >= sizeof(size_t) && cast(size_t, (n)) + 1 > MAX_SIZET / (e)) ? luaM_toobig(L) : cast_void(0));
     return luaM_realloc_(L, block, on * e, n * e);
   }
@@ -44,6 +48,7 @@ public:
   */
   static T* luaM_reallocvchar(lua_State* L, T* block, size_t on, size_t n)
   {
+    static_assert(std::is_same<T, char>::value);
     return luaM_realloc_(L, block, on * sizeof(char), n * sizeof(char));
   }
 
@@ -57,6 +62,8 @@ public:
   }
   static void luaM_freearray(lua_State* L, T* block, size_t n)
   {
+    static_assert(std::is_trivially_constructible<T>::value);
+    static_assert(std::is_trivially_destructible<T>::value);
     luaM_realloc_(L, block, n * sizeof(T), 0);
   }
 

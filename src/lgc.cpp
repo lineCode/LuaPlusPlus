@@ -21,7 +21,10 @@
 #include <lstring.hpp>
 #include <ltable.hpp>
 #include <ltm.hpp>
+#include <lutils.hpp>
 
+
+thread_local lua_State* LGCFactory::active_state = nullptr;
 
 /*
 ** internal state for collector while inside the atomic phase. The
@@ -665,54 +668,44 @@ void luaC_upvdeccount (lua_State *L, UpVal *uv)
 
 static void freeobj (lua_State* L, GCObject* o)
 {
+  
   switch (o->tt)
   {
-    case LUA_TPROTO: LGCFactory::luaC_free(L, gco2p(o)); break;
-    case LUA_TLCL: LGCFactory::luaC_free(L, gco2lcl(o)); break;
-    case LUA_TCCL: LGCFactory::luaC_free(L, gco2ccl(o)); break;
-    case LUA_TTABLE: LGCFactory::luaC_free(L, gco2t(o)); break;
-    case LUA_TTHREAD: LGCFactory::luaC_free(L, gco2th(o)); break;
-    case LUA_TUSERDATA: LGCFactory::luaC_free(L, gco2u(o)); break;
-    case LUA_TSHRSTR: LGCFactory::luaC_freeShortTString(L, gco2ts(o)); break;
-    case LUA_TLNGSTR: LGCFactory::luaC_freeLongTString(L, gco2ts(o)); break;
+    case LUA_TPROTO: LGCFactory::luaC_freeobj(L, gco2p(o)); break;
+    case LUA_TLCL: LGCFactory::luaC_freeobj(L, gco2lcl(o)); break;
+    case LUA_TCCL: LGCFactory::luaC_freeobj(L, gco2ccl(o)); break;
+    case LUA_TTABLE: LGCFactory::luaC_freeobj(L, gco2t(o)); break;
+    case LUA_TTHREAD: LGCFactory::luaC_freeobj(L, gco2th(o)); break;
+    case LUA_TUSERDATA: LGCFactory::luaC_freeobj(L, gco2u(o)); break;
+    case LUA_TSHRSTR: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
+    case LUA_TLNGSTR: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
     default: lua_assert(false);
   }
 }
 
-void LGCFactory::luaC_free(lua_State* L, Proto* funcion)
+void LGCFactory::luaC_free(Proto* funcion)
 {
-  LMem<Instruction>::luaM_freearray(L, funcion->code, funcion->sizecode);
-  LMem<Proto*>::luaM_freearray(L, funcion->p, funcion->sizep);
-  LMem<TValue>::luaM_freearray(L, funcion->k, funcion->sizek);
-  LMem<int>::luaM_freearray(L, funcion->lineinfo, funcion->sizelineinfo);
-  LMem<LocVar>::luaM_freearray(L, funcion->locvars, funcion->sizelocvars);
-  LMem<Upvaldesc>::luaM_freearray(L, funcion->upvalues, funcion->sizeupvalues);
-  LMem<Proto>::luaM_free(L, funcion);
+  funcion->~Proto();
 }
 
-void LGCFactory::luaC_free(lua_State* L, LClosure* closure)
+void LGCFactory::luaC_free(LClosure* closure)
 {
-  for (int32_t i = 0; i < closure->nupvalues; i++)
-    if (UpVal* upValue = closure->upvals[i])
-      luaC_upvdeccount(L, upValue);
-  LMem<LClosure>::luaM_freemem(L, closure, sizeLClosure(closure->nupvalues));
+  closure->~LClosure();
 }
 
-void LGCFactory::luaC_free(lua_State* L, CClosure* closure)
+void LGCFactory::luaC_free(CClosure* closure)
 {
-  LMem<CClosure>::luaM_freemem(L, closure, sizeCClosure(closure->nupvalues));
+  closure->~CClosure();
 }
 
-void LGCFactory::luaC_free(lua_State* L, Table* table)
+void LGCFactory::luaC_free(Table* table)
 {
-  if (!isdummy(table))
-    LMem<Node>::luaM_freearray(L, table->node, cast(size_t, sizenode(table)));
-  LMem<TValue>::luaM_freearray(L, table->array, table->sizearray);
-  LMem<Table>::luaM_free(L, table);
+  table->~Table();
 }
 
-void LGCFactory::luaC_free(lua_State* L, lua_State* L1)
+void LGCFactory::luaC_free(lua_State* L1)
 {
+  lua_State* L = LGCFactory::getActiveState();
   lua_assert(!L1->mainThread);
   luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
   lua_assert(L1->openupval == NULL);
@@ -721,32 +714,15 @@ void LGCFactory::luaC_free(lua_State* L, lua_State* L1)
   LMem<lua_State>::luaM_free(L, L1);
 }
 
-void LGCFactory::luaC_free(lua_State* L, Udata* udata)
+void LGCFactory::luaC_free(Udata* udata)
 {
-  LMem<Udata>::luaM_freemem(L, udata, sizeudata(udata));
+  udata->~Udata();
 }
 
-void LGCFactory::luaC_free(lua_State* L, TString* string)
+void LGCFactory::luaC_free(TString* string)
 {
-  switch (string->tt)
-  {
-    case LUA_TSHRSTR: LGCFactory::luaC_freeShortTString(L, string); break;
-    case LUA_TLNGSTR: LGCFactory::luaC_freeLongTString(L, string); break;
-    default: lua_assert(false);
-  }
+  string->~TString();
 }
-
-void LGCFactory::luaC_freeShortTString(lua_State* L, TString* string)
-{
-  luaS_remove(L, string);  /* remove it from hash table */
-  LMem<TString>::luaM_freemem(L, string, sizelstring(string->shrlen));
-}
-
-void LGCFactory::luaC_freeLongTString(lua_State* L, TString* string)
-{
-  LMem<TString>::luaM_freemem(L, string, sizelstring(string->u.lnglen));
-}
-
 
 #define sweepwholelist(L,p)	sweeplist(L,p,MAX_LUMEM)
 static GCObject **sweeplist (lua_State *L, GCObject **p, lu_mem count);
