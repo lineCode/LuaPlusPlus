@@ -1158,24 +1158,6 @@ LUA_API void lua_len (lua_State *L, int idx) {
 }
 
 
-LUA_API lua_Alloc lua_getallocf (lua_State *L)
-{
-  lua_Alloc f;
-  lua_lock(L);
-  f = L->globalState->frealloc;
-  lua_unlock(L);
-  return f;
-}
-
-
-LUA_API void lua_setallocf (lua_State *L, lua_Alloc f)
-{
-  lua_lock(L);
-  L->globalState->frealloc = f;
-  lua_unlock(L);
-}
-
-
 LUA_API void *lua_newuserdata (lua_State *L, size_t size) {
   Udata *u;
   lua_lock(L);

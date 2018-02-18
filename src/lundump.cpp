@@ -105,7 +105,7 @@ static TString *LoadString (LoadState *S) {
 
 static void LoadCode (LoadState *S, Proto *f) {
   int n = LoadInt(S);
-  f->code = luaM_newvector(S->L, n, Instruction);
+  f->code = LMem<Instruction>::luaM_newvector(S->L, n);
   f->sizecode = n;
   LoadVector(S, f->code, n);
 }
@@ -117,7 +117,7 @@ static void LoadFunction(LoadState *S, Proto *f, TString *psource);
 static void LoadConstants (LoadState *S, Proto *f) {
   int i;
   int n = LoadInt(S);
-  f->k = luaM_newvector(S->L, n, TValue);
+  f->k = LMem<TValue>::luaM_newvector(S->L, n);
   f->sizek = n;
   for (i = 0; i < n; i++)
     setnilvalue(&f->k[i]);
@@ -151,7 +151,7 @@ static void LoadConstants (LoadState *S, Proto *f) {
 static void LoadProtos (LoadState *S, Proto *f) {
   int i;
   int n = LoadInt(S);
-  f->p = luaM_newvector(S->L, n, Proto *);
+  f->p = LMem<Proto*>::luaM_newvector(S->L, n);
   f->sizep = n;
   for (i = 0; i < n; i++)
     f->p[i] = NULL;
@@ -165,7 +165,7 @@ static void LoadProtos (LoadState *S, Proto *f) {
 static void LoadUpvalues (LoadState *S, Proto *f) {
   int i, n;
   n = LoadInt(S);
-  f->upvalues = luaM_newvector(S->L, n, Upvaldesc);
+  f->upvalues = LMem<Upvaldesc>::luaM_newvector(S->L, n);
   f->sizeupvalues = n;
   for (i = 0; i < n; i++)
     f->upvalues[i].name = NULL;
@@ -179,11 +179,11 @@ static void LoadUpvalues (LoadState *S, Proto *f) {
 static void LoadDebug (LoadState *S, Proto *f) {
   int i, n;
   n = LoadInt(S);
-  f->lineinfo = luaM_newvector(S->L, n, int);
+  f->lineinfo = LMem<int>::luaM_newvector(S->L, n);
   f->sizelineinfo = n;
   LoadVector(S, f->lineinfo, n);
   n = LoadInt(S);
-  f->locvars = luaM_newvector(S->L, n, LocVar);
+  f->locvars = LMem<LocVar>::luaM_newvector(S->L, n);
   f->sizelocvars = n;
   for (i = 0; i < n; i++)
     f->locvars[i].varname = NULL;

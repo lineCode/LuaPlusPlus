@@ -23,7 +23,6 @@
 /* key, in the registry, for table of preloaded loaders */
 #define LUA_PRELOAD_TABLE	"_PRELOAD"
 
-
 typedef struct luaL_Reg {
   const char *name;
   lua_CFunction func;

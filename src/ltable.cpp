@@ -296,7 +296,7 @@ static int numusehash (const Table *t, uint32_t *nums, uint32_t *pna) {
 
 static void setarrayvector (lua_State *L, Table *t, uint32_t size) {
   uint32_t i;
-  luaM_reallocvector(L, t->array, t->sizearray, size, TValue);
+  LMem<TValue>::luaM_reallocvector(L, t->array, t->sizearray, size);
   for (i=t->sizearray; i<size; i++)
      setnilvalue(&t->array[i]);
   t->sizearray = size;
@@ -315,7 +315,7 @@ static void setnodevector (lua_State *L, Table *t, uint32_t size) {
     if (lsize > MAXHBITS)
       luaG_runerror(L, "table overflow");
     size = twoto(lsize);
-    t->node = luaM_newvector(L, size, Node);
+    t->node = LMem<Node>::luaM_newvector(L, size);
     for (i = 0; i < (int)size; i++) {
       Node *n = gnode(t, i);
       gnext(n) = 0;
@@ -347,7 +347,7 @@ void luaH_resize (lua_State *L, Table *t, uint32_t nasize,
         luaH_setint(L, t, i + 1, &t->array[i]);
     }
     /* shrink array */
-    luaM_reallocvector(L, t->array, oldasize, nasize, TValue);
+    LMem<TValue>::luaM_reallocvector(L, t->array, oldasize, nasize);
   }
   /* re-insert elements from hash part */
   for (j = oldhsize - 1; j >= 0; j--) {
@@ -359,7 +359,7 @@ void luaH_resize (lua_State *L, Table *t, uint32_t nasize,
     }
   }
   if (oldhsize > 0)  /* not the dummy node? */
-    luaM_freearray(L, nold, cast(size_t, oldhsize)); /* free old hash */
+    LMem<Node>::luaM_freearray(L, nold, cast(size_t, oldhsize)); /* free old hash */
 }
 
 
@@ -411,9 +411,9 @@ Table *luaH_new (lua_State *L) {
 
 void luaH_free (lua_State *L, Table *t) {
   if (!isdummy(t))
-    luaM_freearray(L, t->node, cast(size_t, sizenode(t)));
-  luaM_freearray(L, t->array, t->sizearray);
-  luaM_free(L, t);
+    LMem<Node>::luaM_freearray(L, t->node, cast(size_t, sizenode(t)));
+  LMem<TValue>::luaM_freearray(L, t->array, t->sizearray);
+  LMem<Table>::luaM_free(L, t);
 }
 
 

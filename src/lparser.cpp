@@ -159,8 +159,7 @@ static int registerlocalvar (LexState *ls, TString *varname) {
   FuncState *fs = ls->fs;
   Proto *f = fs->f;
   int oldsize = f->sizelocvars;
-  luaM_growvector(ls->L, f->locvars, fs->nlocvars, f->sizelocvars,
-                  LocVar, SHRT_MAX, "local variables");
+  LMem<LocVar>::luaM_growvector(ls->L, f->locvars, fs->nlocvars, f->sizelocvars, SHRT_MAX, "local variables");
   while (oldsize < f->sizelocvars)
     f->locvars[oldsize++].varname = NULL;
   f->locvars[fs->nlocvars].varname = varname;
@@ -175,8 +174,7 @@ static void new_localvar (LexState *ls, TString *name) {
   int reg = registerlocalvar(ls, name);
   checklimit(fs, dyd->actvar.n + 1 - fs->firstlocal,
                   MAXVARS, "local variables");
-  luaM_growvector(ls->L, dyd->actvar.arr, dyd->actvar.n + 1,
-                  dyd->actvar.size, Vardesc, MAX_INT, "local variables");
+  LMem<Vardesc>::luaM_growvector(ls->L, dyd->actvar.arr, dyd->actvar.n + 1, dyd->actvar.size, MAX_INT, "local variables");
   dyd->actvar.arr[dyd->actvar.n++].idx = cast(short, reg);
 }
 
@@ -226,8 +224,7 @@ static int newupvalue (FuncState *fs, TString *name, expdesc *v) {
   Proto *f = fs->f;
   int oldsize = f->sizeupvalues;
   checklimit(fs, fs->nups + 1, MAXUPVAL, "upvalues");
-  luaM_growvector(fs->ls->L, f->upvalues, fs->nups, f->sizeupvalues,
-                  Upvaldesc, MAXUPVAL, "upvalues");
+  LMem<Upvaldesc>::luaM_growvector(fs->ls->L, f->upvalues, fs->nups, f->sizeupvalues, MAXUPVAL, "upvalues");
   while (oldsize < f->sizeupvalues)
     f->upvalues[oldsize++].name = NULL;
   f->upvalues[fs->nups].instack = (v->k == VLOCAL);
@@ -382,8 +379,7 @@ static int findlabel (LexState *ls, int g) {
 static int newlabelentry (LexState *ls, Labellist *l, TString *name,
                           int line, int pc) {
   int n = l->n;
-  luaM_growvector(ls->L, l->arr, n, l->size,
-                  Labeldesc, SHRT_MAX, "labels/gotos");
+  LMem<Labeldesc>::luaM_growvector(ls->L, l->arr, n, l->size, SHRT_MAX, "labels/gotos");
   l->arr[n].name = name;
   l->arr[n].line = line;
   l->arr[n].nactvar = ls->fs->nactvar;
@@ -500,7 +496,7 @@ static Proto *addprototype (LexState *ls) {
   Proto *f = fs->f;  /* prototype of current function */
   if (fs->np >= f->sizep) {
     int oldsize = f->sizep;
-    luaM_growvector(L, f->p, fs->np, f->sizep, Proto *, MAXARG_Bx, "functions");
+    LMem<Proto*>::luaM_growvector(L, f->p, fs->np, f->sizep, MAXARG_Bx, "functions");
     while (oldsize < f->sizep)
       f->p[oldsize++] = NULL;
   }
@@ -552,17 +548,17 @@ static void close_func (LexState *ls) {
   Proto *f = fs->f;
   luaK_ret(fs, 0, 0);  /* final return */
   leaveblock(fs);
-  luaM_reallocvector(L, f->code, f->sizecode, fs->pc, Instruction);
+  LMem<Instruction>::luaM_reallocvector(L, f->code, f->sizecode, fs->pc);
   f->sizecode = fs->pc;
-  luaM_reallocvector(L, f->lineinfo, f->sizelineinfo, fs->pc, int);
+  LMem<int>::luaM_reallocvector(L, f->lineinfo, f->sizelineinfo, fs->pc);
   f->sizelineinfo = fs->pc;
-  luaM_reallocvector(L, f->k, f->sizek, fs->nk, TValue);
+  LMem<TValue>::luaM_reallocvector(L, f->k, f->sizek, fs->nk);
   f->sizek = fs->nk;
-  luaM_reallocvector(L, f->p, f->sizep, fs->np, Proto *);
+  LMem<Proto*>::luaM_reallocvector(L, f->p, f->sizep, fs->np);
   f->sizep = fs->np;
-  luaM_reallocvector(L, f->locvars, f->sizelocvars, fs->nlocvars, LocVar);
+  LMem<LocVar>::luaM_reallocvector(L, f->locvars, f->sizelocvars, fs->nlocvars);
   f->sizelocvars = fs->nlocvars;
-  luaM_reallocvector(L, f->upvalues, f->sizeupvalues, fs->nups, Upvaldesc);
+  LMem<Upvaldesc>::luaM_reallocvector(L, f->upvalues, f->sizeupvalues, fs->nups);
   f->sizeupvalues = fs->nups;
   lua_assert(fs->bl == NULL);
   ls->fs = fs->prev;

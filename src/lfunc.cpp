@@ -41,7 +41,7 @@ LClosure *luaF_newLclosure (lua_State *L, int n) {
 void luaF_initupvals (lua_State *L, LClosure *cl) {
   int i;
   for (i = 0; i < cl->nupvalues; i++) {
-    UpVal *uv = luaM_new(L, UpVal);
+    UpVal* uv = LMem<UpVal>::luaM_new(L);
     uv->refcount = 1;
     uv->v = &uv->u.value;  /* make it closed */
     setnilvalue(uv->v);
@@ -62,7 +62,7 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
     pp = &p->u.open.next;
   }
   /* not found: create a new upvalue */
-  uv = luaM_new(L, UpVal);
+  uv = LMem<UpVal>::luaM_new(L);
   uv->refcount = 0;
   uv->u.open.next = *pp;  /* link it to list of open upvalues */
   uv->u.open.touched = 1;
@@ -82,7 +82,7 @@ void luaF_close (lua_State *L, StkId level) {
     lua_assert(upisopen(uv));
     L->openupval = uv->u.open.next;  /* remove from 'open' list */
     if (uv->refcount == 0)  /* no references? */
-      luaM_free(L, uv);  /* free upvalue */
+      LMem<UpVal>::luaM_free(L, uv);  /* free upvalue */
     else {
       setobj(L, &uv->u.value, uv->v);  /* move value to upvalue slot */
       uv->v = &uv->u.value;  /* now current value lives here */
@@ -118,14 +118,15 @@ Proto *luaF_newproto (lua_State *L) {
 }
 
 
-void luaF_freeproto (lua_State *L, Proto *f) {
-  luaM_freearray(L, f->code, f->sizecode);
-  luaM_freearray(L, f->p, f->sizep);
-  luaM_freearray(L, f->k, f->sizek);
-  luaM_freearray(L, f->lineinfo, f->sizelineinfo);
-  luaM_freearray(L, f->locvars, f->sizelocvars);
-  luaM_freearray(L, f->upvalues, f->sizeupvalues);
-  luaM_free(L, f);
+void luaF_freeproto (lua_State *L, Proto *f)
+{
+  LMem<Instruction>::luaM_freearray(L, f->code, f->sizecode);
+  LMem<Proto*>::luaM_freearray(L, f->p, f->sizep);
+  LMem<TValue>::luaM_freearray(L, f->k, f->sizek);
+  LMem<int>::luaM_freearray(L, f->lineinfo, f->sizelineinfo);
+  LMem<LocVar>::luaM_freearray(L, f->locvars, f->sizelocvars);
+  LMem<Upvaldesc>::luaM_freearray(L, f->upvalues, f->sizeupvalues);
+  LMem<Proto>::luaM_free(L, f);
 }
 
 

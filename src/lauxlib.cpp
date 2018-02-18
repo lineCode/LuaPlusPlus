@@ -24,6 +24,7 @@
 
 #include <lua.hpp>
 #include <lauxlib.hpp>
+#include <lstate.hpp>
 
 
 /*
@@ -458,9 +459,8 @@ typedef struct UBox {
 
 
 static void *resizebox (lua_State *L, int idx, size_t newsize) {
-  lua_Alloc allocf = lua_getallocf(L);
   UBox *box = (UBox *)lua_touserdata(L, idx);
-  void *temp = allocf(box->box, box->bsize, newsize);
+  void *temp = LuaAllocator<char>::alloc(static_cast<char*>(box->box), box->bsize, newsize);
   if (temp == NULL && newsize > 0) {  /* allocation error? */
     resizebox(L, idx, 0);  /* free buffer */
     luaL_error(L, "not enough memory for buffer allocation");
@@ -920,18 +920,6 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
   return lua_tostring(L, -1);
 }
 
-
-static void *l_alloc (void *ptr, size_t osize, size_t nsize) {
-  (void)osize;  /* not used */
-  if (nsize == 0) {
-    free(ptr);
-    return NULL;
-  }
-  else
-    return realloc(ptr, nsize);
-}
-
-
 static int panic (lua_State *L) {
   lua_writestringerror("PANIC: unprotected error in call to Lua API (%s)\n",
                         lua_tostring(L, -1));
@@ -939,8 +927,9 @@ static int panic (lua_State *L) {
 }
 
 
-LUALIB_API lua_State *luaL_newstate (void) {
-  lua_State *L = lua_newstate(l_alloc);
+LUALIB_API lua_State *luaL_newstate ()
+{
+  lua_State *L = lua_newstate();
   if (L) lua_atpanic(L, &panic);
   return L;
 }

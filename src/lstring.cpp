@@ -72,7 +72,7 @@ void luaS_resize (lua_State *L, int newsize) {
   int i;
   stringtable *tb = &L->globalState->strt;
   if (newsize > tb->size) {  /* grow table if needed */
-    luaM_reallocvector(L, tb->hash, tb->size, newsize, TString *);
+    LMem<TString*>::luaM_reallocvector(L, tb->hash, tb->size, newsize);
     for (i = tb->size; i < newsize; i++)
       tb->hash[i] = NULL;
   }
@@ -90,7 +90,7 @@ void luaS_resize (lua_State *L, int newsize) {
   if (newsize < tb->size) {  /* shrink table if needed */
     /* vanishing slice should be empty */
     lua_assert(tb->hash[newsize] == NULL && tb->hash[tb->size - 1] == NULL);
-    luaM_reallocvector(L, tb->hash, tb->size, newsize, TString *);
+    LMem<TString*>::luaM_reallocvector(L, tb->hash, tb->size, newsize);
   }
   tb->size = newsize;
 }

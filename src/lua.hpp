@@ -114,11 +114,6 @@ using lua_Writer = int (*) (lua_State *L, const void *p, size_t sz, void *ud);
 
 
 /*
-** Type for memory-allocation functions
-*/
-using lua_Alloc = void * (*) (void *ptr, size_t osize, size_t nsize);
-
-/*
 ** RCS ident string
 */
 extern const char lua_ident[];
@@ -127,7 +122,7 @@ extern const char lua_ident[];
 /*
 ** state manipulation
 */
-LUA_API lua_State *(lua_newstate) (lua_Alloc f);
+LUA_API lua_State *(lua_newstate) ();
 LUA_API void       (lua_close) (lua_State *L);
 LUA_API lua_State *(lua_newthread) (lua_State *L);
 
@@ -309,9 +304,6 @@ LUA_API void  (lua_concat) (lua_State *L, int n);
 LUA_API void  (lua_len)    (lua_State *L, int idx);
 
 LUA_API size_t   (lua_stringtonumber) (lua_State *L, const char *s);
-
-LUA_API lua_Alloc (lua_getallocf) (lua_State *L);
-LUA_API void      (lua_setallocf) (lua_State *L, lua_Alloc f);
 
 
 

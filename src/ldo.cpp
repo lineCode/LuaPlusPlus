@@ -178,7 +178,7 @@ void luaD_reallocstack (lua_State *L, int newsize) {
   int lim = L->stacksize;
   lua_assert(newsize <= LUAI_MAXSTACK || newsize == ERRORSTACKSIZE);
   lua_assert(L->stack_last - L->stack == L->stacksize - EXTRA_STACK);
-  luaM_reallocvector(L, L->stack, L->stacksize, newsize, TValue);
+  LMem<TValue>::luaM_reallocvector(L, L->stack, L->stacksize, newsize);
   for (; lim < newsize; lim++)
     setnilvalue(L->stack + lim); /* erase new segment */
   L->stacksize = newsize;
@@ -790,10 +790,11 @@ int luaD_protectedparser (lua_State *L, ZIO *z, const char *name,
   p.dyd.label.arr = NULL; p.dyd.label.size = 0;
   luaZ_initbuffer(L, &p.buff);
   status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errfunc);
-  luaZ_freebuffer(L, &p.buff);
-  luaM_freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
-  luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
-  luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
+  p.buff.buffer = LMem<char>::luaM_reallocvchar(L, p.buff.buffer, p.buff.buffsize, 0);
+  p.buff.buffsize = 0;
+  LMem<Vardesc>::luaM_freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
+  LMem<Labeldesc>::luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
+  LMem<Labeldesc>::luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
   L->nny--;
   return status;
 }
