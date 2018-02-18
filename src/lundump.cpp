@@ -35,9 +35,10 @@ typedef struct {
 } LoadState;
 
 
-static void error(LoadState *S, const char *why) {
-  luaO_pushfstring(S->L, "%s: %s precompiled chunk", S->name, why);
-  luaD_throw(S->L, LUA_ERRSYNTAX);
+static void error(LoadState *S, const char* why)
+{
+  const char* what = luaO_pushfstring(S->L, "%s: %s precompiled chunk", S->name, why);
+  luaD_throw(S->L, LUA_ERRSYNTAX, what);
 }
 
 

@@ -26,9 +26,6 @@
 */
 
 
-struct lua_longjmp;  /* defined in ldo.c */
-
-
 /*
 ** Atomic type (relative to signals) to better ensure that 'lua_sethook'
 ** is thread safe
@@ -156,6 +153,7 @@ struct global_State
 };
 
 struct lua_MainThread;
+struct lua_ErrorStatus;
 /*
 ** 'per thread' state
 */
@@ -173,7 +171,7 @@ struct lua_State : GCObject
   UpVal *openupval;  /* list of open upvalues in this stack */
   GCObject *gclist;
   struct lua_State *twups;  /* list of threads with open upvalues */
-  struct lua_longjmp *errorJmp;  /* current error recover point */
+  struct lua_ErrorStatus* errorStatus;  /* current error data */
   CallInfo base_ci;  /* CallInfo for first level (C calling Lua) */
   volatile lua_Hook hook;
   ptrdiff_t errfunc;  /* current error handling function (stack index) */

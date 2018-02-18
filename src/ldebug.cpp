@@ -647,15 +647,17 @@ const char *luaG_addinfo (lua_State *L, const char *msg, TString *src,
 }
 
 
-void luaG_errormsg (lua_State *L) {
-  if (L->errfunc != 0) {  /* is there an error handling function? */
+void luaG_errormsg (lua_State *L, const char* what)
+{
+  if (L->errfunc != 0)
+  {  /* is there an error handling function? */
     StkId errfunc = restorestack(L, L->errfunc);
     setobjs2s(L, L->top, L->top - 1);  /* move argument */
     setobjs2s(L, L->top - 1, errfunc);  /* push function */
     L->top++;  /* assume EXTRA_STACK */
     luaD_callnoyield(L, L->top - 2, 1);  /* call it */
   }
-  luaD_throw(L, LUA_ERRRUN);
+  luaD_throw(L, LUA_ERRRUN, what);
 }
 
 
@@ -668,11 +670,12 @@ void luaG_runerror (lua_State *L, const char *fmt, ...) {
   va_end(argp);
   if (isLua(ci))  /* if Lua function, add source:line information */
     luaG_addinfo(L, msg, ci_func(ci)->p->source, currentline(ci));
-  luaG_errormsg(L);
+  luaG_errormsg(L, msg);
 }
 
 
-void luaG_traceexec (lua_State *L) {
+void luaG_traceexec (lua_State *L)
+{
   CallInfo *ci = L->ci;
   uint8_t mask = L->hookmask;
   int counthook = (--L->hookcount == 0 && (mask & LUA_MASKCOUNT));
@@ -702,7 +705,7 @@ void luaG_traceexec (lua_State *L) {
     ci->u.l.savedpc--;  /* undo increment (resume will increment it again) */
     ci->callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
     ci->func = L->top - 1;  /* protect stack below results */
-    luaD_throw(L, LUA_YIELD);
+    luaD_throw(L, LUA_YIELD, "yield");
   }
 }
 

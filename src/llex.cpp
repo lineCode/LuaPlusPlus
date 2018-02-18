@@ -102,11 +102,13 @@ static const char *txtToken (LexState *ls, int token) {
 }
 
 
-static void lexerror (LexState *ls, const char *msg, int token) {
+static void lexerror (LexState *ls, const char *msg, int token)
+{
   msg = luaG_addinfo(ls->L, msg, ls->source, ls->linenumber);
+  const char* what = msg;
   if (token)
-    luaO_pushfstring(ls->L, "%s near %s", msg, txtToken(ls, token));
-  luaD_throw(ls->L, LUA_ERRSYNTAX);
+    what = luaO_pushfstring(ls->L, "%s near %s", msg, txtToken(ls, token));
+  luaD_throw(ls->L, LUA_ERRSYNTAX, what);
 }
 
 

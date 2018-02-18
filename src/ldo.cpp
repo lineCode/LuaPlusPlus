@@ -31,7 +31,7 @@
 #include <lundump.hpp>
 #include <lvm.hpp>
 #include <lzio.hpp>
-
+#include <lexceptions.hpp>
 
 
 #define errorstatus(s)	((s) > LUA_YIELD)
@@ -43,52 +43,17 @@
 ** =======================================================
 */
 
-/*
-** LUAI_THROW/LUAI_TRY define how Lua does exception handling. By
-** default, Lua handles errors with exceptions when compiling as
-** C++ code, with _longjmp/_setjmp when asked to use them, and with
-** longjmp/setjmp otherwise.
-*/
-#if !defined(LUAI_THROW)				/* { */
-
-#if defined(__cplusplus) && !defined(LUA_USE_LONGJMP)	/* { */
-
-/* C++ exceptions */
-#define LUAI_THROW(L,c)		throw(c)
-#define LUAI_TRY(L,c,a) \
-	try { a } catch(...) { if ((c)->status == 0) (c)->status = -1; }
-#define luai_jmpbuf		int  /* dummy variable */
-
-#elif defined(LUA_USE_POSIX)				/* }{ */
-
-/* in POSIX, try _longjmp/_setjmp (more efficient) */
-#define LUAI_THROW(L,c)		_longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)		if (_setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf		jmp_buf
-
-#else							/* }{ */
-
-/* ISO C handling with long jumps */
-#define LUAI_THROW(L,c)		longjmp((c)->b, 1)
-#define LUAI_TRY(L,c,a)		if (setjmp((c)->b) == 0) { a }
-#define luai_jmpbuf		jmp_buf
-
-#endif							/* } */
-
-#endif							/* } */
-
-
-
-/* chain list of long jump buffers */
-struct lua_longjmp {
-  struct lua_longjmp *previous;
-  luai_jmpbuf b;
+struct lua_ErrorStatus
+{
+  struct lua_ErrorStatus* previous;
   volatile int status;  /* error code */
 };
 
 
-static void seterrorobj (lua_State *L, int errcode, StkId oldtop) {
-  switch (errcode) {
+static void seterrorobj (lua_State *L, int errcode, StkId oldtop)
+{
+  switch (errcode)
+  {
     case LUA_ERRMEM: {  /* memory error? */
       setsvalue2s(L, oldtop, L->globalState->memerrmsg); /* reuse preregistered msg. */
       break;
@@ -106,17 +71,21 @@ static void seterrorobj (lua_State *L, int errcode, StkId oldtop) {
 }
 
 
-void luaD_throw (lua_State *L, int errcode) {
-  if (L->errorJmp) {  /* thread has an error handler? */
-    L->errorJmp->status = errcode;  /* set status */
-    LUAI_THROW(L, L->errorJmp);  /* jump to it */
+void luaD_throw (lua_State *L, int errcode, const char* what)
+{
+  if (L->errorStatus)
+  {  /* thread has an error handler? */
+    L->errorStatus->status = errcode;  /* set status */
+    throw lua_exception(errcode, what);
   }
-  else {  /* thread has no error handler */
+  else
+  {  /* thread has no error handler */
     global_State *g = L->globalState;
     L->status = cast_byte(errcode);  /* mark it as dead */
-    if (g->mainthread->errorJmp) {  /* main thread has a handler? */
+    if (g->mainthread->errorStatus)
+    {  /* main thread has a handler? */
       setobjs2s(L, g->mainthread->top++, L->top - 1);  /* copy error obj. */
-      luaD_throw(g->mainthread, errcode);  /* re-throw in main thread */
+      luaD_throw(g->mainthread, errcode, what);  /* re-throw in main thread */
     }
     else {  /* no handler at all; abort */
       if (g->panic) {  /* panic function? */
@@ -126,7 +95,7 @@ void luaD_throw (lua_State *L, int errcode) {
         lua_unlock(L);
         g->panic(L);  /* call panic function (last chance to jump out) */
       }
-      abort();
+      throw lua_unhandled_exception(errcode, what);
     }
   }
 }
@@ -134,16 +103,22 @@ void luaD_throw (lua_State *L, int errcode) {
 
 int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud) {
   unsigned short oldnCcalls = L->nCcalls;
-  struct lua_longjmp lj;
-  lj.status = LUA_OK;
-  lj.previous = L->errorJmp;  /* chain new error handler */
-  L->errorJmp = &lj;
-  LUAI_TRY(L, &lj,
+  // chain new error status
+  lua_ErrorStatus errorStatus { L->errorStatus, LUA_OK };
+  L->errorStatus = &errorStatus;
+
+  try
+  {
     (*f)(L, ud);
-  );
-  L->errorJmp = lj.previous;  /* restore old error handler */
+  }
+  catch (const std::exception&)
+  {
+    if (errorStatus.status == LUA_OK)
+      errorStatus.status = -1;
+  }
+  L->errorStatus = errorStatus.previous;  /* restore old error handler */
   L->nCcalls = oldnCcalls;
-  return lj.status;
+  return errorStatus.status;
 }
 
 /* }====================================================== */
@@ -190,7 +165,7 @@ void luaD_reallocstack (lua_State *L, int newsize) {
 void luaD_growstack (lua_State *L, int n) {
   int size = L->stacksize;
   if (size > LUAI_MAXSTACK)  /* error after extra size? */
-    luaD_throw(L, LUA_ERRERR);
+    luaD_throw(L, LUA_ERRERR, "stack limit reached");
   else {
     int needed = cast_int(L->top - L->stack) + n + EXTRA_STACK;
     int newsize = 2 * size;
@@ -477,11 +452,12 @@ int luaD_precall (lua_State *L, StkId func, int nresults) {
 ** smaller than 9/8 of LUAI_MAXCCALLS, does not report an error (to
 ** allow overflow handling to work)
 */
-static void stackerror (lua_State *L) {
+static void stackerror (lua_State *L)
+{
   if (L->nCcalls == LUAI_MAXCCALLS)
     luaG_runerror(L, "C stack overflow");
   else if (L->nCcalls >= (LUAI_MAXCCALLS + (LUAI_MAXCCALLS>>3)))
-    luaD_throw(L, LUA_ERRERR);  /* error while handing stack error */
+    luaD_throw(L, LUA_ERRERR, "error while handing stack");
 }
 
 
@@ -709,7 +685,7 @@ LUA_API int lua_yieldk (lua_State *L, int nresults, lua_KContext ctx,
     if ((ci->u.c.k = k) != NULL)  /* is there a continuation? */
       ci->u.c.ctx = ctx;  /* save context */
     ci->func = L->top - nresults - 1;  /* protect stack below results */
-    luaD_throw(L, LUA_YIELD);
+    luaD_throw(L, LUA_YIELD, "yield");
   }
   lua_assert(ci->callstatus & CIST_HOOKED);  /* must be inside a hook */
   lua_unlock(L);
@@ -753,11 +729,11 @@ struct SParser {  /* data to 'f_parser' */
 };
 
 
-static void checkmode (lua_State *L, const char *mode, const char *x) {
+static void checkmode (lua_State *L, const char *mode, const char *x)
+{
   if (mode && strchr(mode, x[0]) == NULL) {
-    luaO_pushfstring(L,
-       "attempt to load a %s chunk (mode is '%s')", x, mode);
-    luaD_throw(L, LUA_ERRSYNTAX);
+    const char* what = luaO_pushfstring(L, "attempt to load a %s chunk (mode is '%s')", x, mode);
+    luaD_throw(L, LUA_ERRSYNTAX, what);
   }
 }
 

@@ -53,7 +53,7 @@ void luaM_addGCDebt(lua_State* L, size_t size, size_t realosize)
 
 void luaM_allocFail(lua_State* L)
 {
-  luaD_throw(L, LUA_ERRMEM);
+  luaD_throw(L, LUA_ERRMEM, "alloc failed");
 }
 
 void luaM_tooMany(lua_State* L, const char* what, int32_t limit)

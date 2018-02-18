@@ -1106,10 +1106,17 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
 */
 
 
-LUA_API int lua_error (lua_State *L) {
+LUA_API int lua_error (lua_State *L)
+{
   lua_lock(L);
   api_checknelems(L, 1);
-  luaG_errormsg(L);
+
+  const char* what = nullptr;
+  const TValue* o = index2addr(L, -1);
+  if (ttisstring(o))
+    what = svalue(o);
+  luaG_errormsg(L, what);
+
   /* code unreachable; will unlock when control actually leaves the kernel */
   return 0;  /* to avoid warnings */
 }

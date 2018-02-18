@@ -48,5 +48,5 @@ LUAI_FUNC void luaD_growstack (lua_State *L, int n);
 LUAI_FUNC void luaD_shrinkstack (lua_State *L);
 LUAI_FUNC void luaD_inctop (lua_State *L);
 
-LUAI_FUNC void luaD_throw (lua_State *L, int errcode);
+LUAI_FUNC void luaD_throw (lua_State *L, int errcode, const char* what);
 LUAI_FUNC int luaD_rawrunprotected (lua_State *L, Pfunc f, void *ud);

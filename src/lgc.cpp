@@ -821,7 +821,8 @@ static void dothecall (lua_State *L, void *ud) {
 }
 
 
-static void GCTM (lua_State *L, int propagateerrors) {
+static void GCTM (lua_State *L, int propagateerrors)
+{
   global_State *g = L->globalState;
   const TValue *tm;
   TValue v;
@@ -842,14 +843,16 @@ static void GCTM (lua_State *L, int propagateerrors) {
     L->allowhook = oldah;  /* restore hooks */
     g->gcrunning = running;  /* restore state */
     if (status != LUA_OK && propagateerrors) {  /* error while running __gc? */
-      if (status == LUA_ERRRUN) {  /* is there an error object? */
+      const char* error = "";
+      if (status == LUA_ERRRUN)
+      {  /* is there an error object? */
         const char *msg = (ttisstring(L->top - 1))
                             ? svalue(L->top - 1)
                             : "no message";
-        luaO_pushfstring(L, "error in __gc metamethod (%s)", msg);
+        error = luaO_pushfstring(L, "error in __gc metamethod (%s)", msg);
         status = LUA_ERRGCMM;  /* error in __gc metamethod */
       }
-      luaD_throw(L, status);  /* re-throw error */
+      luaD_throw(L, status, error);  /* re-throw error */
     }
   }
 }

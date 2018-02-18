@@ -200,19 +200,19 @@ static void f_luaopen (lua_State *L, void *ud) {
 static void preinit_thread (lua_State *L, global_State *g)
 {
   L->globalState = g;
-  L->stack = NULL;
-  L->ci = NULL;
+  L->stack = nullptr;
+  L->ci = nullptr;
   L->nci = 0;
   L->stacksize = 0;
   L->twups = L;  /* thread has no upvalues */
-  L->errorJmp = NULL;
+  L->errorStatus = nullptr;
   L->nCcalls = 0;
-  L->hook = NULL;
+  L->hook = nullptr;
   L->hookmask = 0;
   L->basehookcount = 0;
   L->allowhook = 1;
   resethookcount(L);
-  L->openupval = NULL;
+  L->openupval = nullptr;
   L->nny = 1;
   L->status = LUA_OK;
   L->errfunc = 0;
