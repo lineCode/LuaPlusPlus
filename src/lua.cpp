@@ -17,7 +17,7 @@
 #include <lua.hpp>
 #include <lauxlib.hpp>
 #include <lualib.hpp>
-
+#include <thread>
 
 
 #if !defined(LUA_PROMPT)
@@ -593,6 +593,8 @@ static int pmain (lua_State *L) {
 
 int main(int argc, char** argv)
 {
+  using namespace std::literals;
+  //std::this_thread::sleep_for(20s);
   lua_State *L = luaL_newstate();  /* create state */
   if (L == nullptr)
   {

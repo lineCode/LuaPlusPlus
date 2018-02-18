@@ -129,20 +129,37 @@
 	(iscollectable((uv)->v) && !upisopen(uv)) ? \
          luaC_upvalbarrier_(L,uv) : cast_void(0))
 
-// Create a new collectable object (with given type and size) and link it to 'allgc' list.
-template<class T>
-LUAI_FUNC T* luaC_newobj (lua_State* L, int tt, size_t sz)
+class LGCFactory
 {
-  static_assert(std::is_base_of<GCObject, T>::value);
+public:
+  LGCFactory() = delete;
 
-  T* object = static_cast<T*>(LMem<void>::luaM_newobject(L, novariant(tt), sz));
-  global_State* g = L->globalState;
-  object->marked = luaC_white(g);
-  object->tt = tt;
-  object->next = g->allgc;
-  g->allgc = object;
-  return object;
-}
+  // Create a new collectable object (with given type and size) and link it to 'allgc' list.
+  template<class T>
+  static T* luaC_newobj(lua_State* L, int tt, size_t sz)
+  {
+    static_assert(std::is_base_of<GCObject, T>::value);
+    static_assert(!std::is_same<decltype(&LGCFactory::luaC_free(std::declval<lua_State*>(), std::declval<T*>())), void>::value);
+
+    T* object = static_cast<T*>(LMem<void>::luaM_newobject(L, novariant(tt), sz));
+    global_State* g = L->globalState;
+    object->marked = luaC_white(g);
+    object->tt = tt;
+    object->next = g->allgc;
+    g->allgc = object;
+    return object;
+  }
+
+  static void luaC_free(lua_State* L, Proto* funcion);
+  static void luaC_free(lua_State* L, LClosure* closure);
+  static void luaC_free(lua_State* L, CClosure* closure);
+  static void luaC_free(lua_State* L, Table* table);
+  static void luaC_free(lua_State* L, lua_State* L1);
+  static void luaC_free(lua_State* L, Udata* udata);
+  static void luaC_free(lua_State* L, TString* string);
+  static void luaC_freeShortTString(lua_State* L, TString* string);
+  static void luaC_freeLongTString(lua_State* L, TString* string);
+};
 
 LUAI_FUNC void luaC_fix (lua_State *L, GCObject *o);
 LUAI_FUNC void luaC_freeallobjects (lua_State *L);

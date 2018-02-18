@@ -283,24 +283,39 @@ using StkId = TValue*;  /* index to stack elements */
 ** Header for string value; string bytes follow the end of this structure
 ** (aligned according to 'UTString'; see next).
 */
-struct TString : GCObject
+class TString : public GCObject
 {
+  friend class LGCFactory;
+  friend struct TStringAlign;
+  TString() = default;
+  ~TString() = default;
+public:
+  TString(const TString&) = delete;
+  TString(TString&&) = delete;
+  TString& operator=(const TString&) = delete;
+  TString& operator=(TString&&) = delete;
+
   uint8_t extra;  /* reserved words for short strings; "has hash" for longs */
   uint8_t shrlen;  /* length for short strings */
   uint32_t hash;
-  union {
+  union
+  {
     size_t lnglen;  /* length for long strings */
-    struct TString *hnext;  /* linked list for hash table */
+    TString* hnext;  /* linked list for hash table */
   } u;
 };
 
-
-/*
-** Ensures that address after this type is always fully aligned.
-*/
-union UTString {
-  L_Umaxalign dummy;  /* ensures maximum alignment for strings */
-  TString tsv;
+struct TStringAlign
+{
+  TStringAlign() = delete;
+  /*
+  ** Ensures that address after this type is always fully aligned.
+  */
+  using UTString = union
+  {
+    L_Umaxalign dummy;
+    TString tsv;
+  };
 };
 
 
@@ -309,7 +324,7 @@ union UTString {
 ** (Access to 'extra' ensures that value is really a 'TString'.)
 */
 #define getstr(ts)  \
-  check_exp(sizeof((ts)->extra), cast(char *, (ts)) + sizeof(UTString))
+  check_exp(sizeof((ts)->extra), cast(char *, (ts)) + sizeof(TStringAlign::UTString))
 
 
 /* get the actual string (array of bytes) from a Lua value */
@@ -326,21 +341,36 @@ union UTString {
 ** Header for userdata; memory area follows the end of this structure
 ** (aligned according to 'UUdata'; see next).
 */
-struct Udata : GCObject
+class Udata : public GCObject
 {
+  friend class LGCFactory;
+  friend struct UDataAlign;
+  Udata() = default;
+  ~Udata() = default;
+public:
+  Udata(const Udata&) = delete;
+  Udata(Udata&&) = delete;
+  Udata& operator=(const Udata&) = delete;
+  Udata& operator=(Udata&&) = delete;
+
   uint8_t ttuv_;  /* user value's tag */
-  struct Table *metatable;
+  class Table* metatable;
   size_t len;  /* number of bytes */
   union Value user_;  /* user value */
 };
 
+struct UDataAlign
+{
+  UDataAlign() = delete;
 
-/*
-** Ensures that address after this type is always fully aligned.
-*/
-union UUdata {
-  L_Umaxalign dummy;  /* ensures maximum alignment for 'local' udata */
-  Udata uv;
+  /*
+  ** Ensures that address after this type is always fully aligned.
+  */
+  using UUdata = union
+  {
+    L_Umaxalign dummy;  /* ensures maximum alignment for 'local' udata */
+    Udata uv;
+  };
 };
 
 
@@ -349,7 +379,7 @@ union UUdata {
 ** (Access to 'ttuv_' ensures that value is really a 'Udata'.)
 */
 #define getudatamem(u)  \
-  check_exp(sizeof((u)->ttuv_), (cast(char*, (u)) + sizeof(UUdata)))
+  check_exp(sizeof((u)->ttuv_), (cast(char*, (u)) + sizeof(UDataAlign::UUdata)))
 
 #define setuservalue(L,u,o) \
 	{ const TValue *io=(o); Udata *iu = (u); \
@@ -387,8 +417,17 @@ struct LocVar {
 /*
 ** Function Prototypes
 */
-struct Proto : GCObject
+class Proto : public GCObject
 {
+  friend class LGCFactory;
+  Proto() = default;
+  ~Proto() = default;
+public:
+  Proto(const Proto&) = delete;
+  Proto(Proto&&) = delete;
+  Proto& operator=(const Proto&) = delete;
+  Proto& operator=(Proto&&) = delete;
+
   uint8_t numparams;  /* number of fixed parameters */
   uint8_t is_vararg;
   uint8_t maxstacksize;  /* number of registers needed by this function */
@@ -406,7 +445,7 @@ struct Proto : GCObject
   int *lineinfo;  /* map from opcodes to source lines (debug information) */
   LocVar *locvars;  /* information about local variables (debug information) */
   Upvaldesc *upvalues;  /* upvalue information */
-  struct LClosure *cache;  /* last-created closure with this prototype */
+  class LClosure *cache;  /* last-created closure with this prototype */
   TString  *source;  /* used for debug information */
   GCObject *gclist;
 };
@@ -423,22 +462,48 @@ using UpVal = struct UpVal;
 ** Closures
 */
 
-struct ClosureHeader : GCObject
+class ClosureHeader : public GCObject
 {
+protected:
+  ClosureHeader() = default;
+  ~ClosureHeader() = default;
+public:
+  ClosureHeader(const ClosureHeader&) = delete;
+  ClosureHeader(ClosureHeader&&) = delete;
+  ClosureHeader& operator=(const ClosureHeader&) = delete;
+  ClosureHeader& operator=(ClosureHeader&&) = delete;
+
 	uint8_t nupvalues;
   GCObject* gclist;
 };
 
-struct CClosure : ClosureHeader
+class CClosure : public ClosureHeader
 {
+  friend class LGCFactory;
+  CClosure() = default;
+  ~CClosure() = default;
+public:
+  CClosure(const CClosure&) = delete;
+  CClosure(CClosure&&) = delete;
+  CClosure& operator=(const CClosure&) = delete;
+  CClosure& operator=(CClosure&&) = delete;
+
   lua_CFunction f;
   TValue upvalue[1];  /* list of upvalues */
 };
 
-
-struct LClosure : ClosureHeader
+class LClosure : public ClosureHeader
 {
-  struct Proto *p;
+  friend class LGCFactory;
+  LClosure() = default;
+  ~LClosure() = default;
+public:
+  LClosure(const LClosure&) = delete;
+  LClosure(LClosure&&) = delete;
+  LClosure& operator=(const LClosure&) = delete;
+  LClosure& operator=(LClosure&&) = delete;
+
+  Proto *p;
   UpVal *upvals[1];  /* list of upvalues */
 };
 
@@ -486,16 +551,25 @@ struct Node
 };
 
 
-struct Table : GCObject
+class Table : public GCObject
 {
+  friend class LGCFactory;
+  Table() = default;
+  ~Table() = default;
+public:
+  Table(const Table&) = delete;
+  Table(Table&&) = delete;
+  Table& operator=(const Table&) = delete;
+  Table& operator=(Table&&) = delete;
+
   uint8_t flags;  /* 1<<p means tagmethod(p) is not present */
   uint8_t lsizenode;  /* log2 of size of 'node' array */
   uint32_t sizearray;  /* size of 'array' array */
-  TValue *array;  /* array part */
-  Node *node;
-  Node *lastfree;  /* any free position is before this position */
-  struct Table *metatable;
-  GCObject *gclist;
+  TValue* array;  /* array part */
+  Node* node;
+  Node* lastfree;  /* any free position is before this position */
+  Table* metatable;
+  GCObject* gclist;
 };
 
 
