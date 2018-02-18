@@ -197,21 +197,6 @@ void luaC_fix (lua_State *L, GCObject *o) {
   g->fixedgc = o;
 }
 
-
-/*
-** create a new collectable object (with given type and size) and link
-** it to 'allgc' list.
-*/
-GCObject *luaC_newobj (lua_State *L, int tt, size_t sz) {
-  global_State *g = L->globalState;
-  GCObject* o = LMem<GCObject>::luaM_newobject(L, novariant(tt), sz);
-  o->marked = luaC_white(g);
-  o->tt = tt;
-  o->next = g->allgc;
-  g->allgc = o;
-  return o;
-}
-
 /* }====================================================== */
 
 
@@ -678,42 +663,77 @@ void luaC_upvdeccount (lua_State *L, UpVal *uv) {
     LMem<UpVal>::luaM_free(L, uv);
 }
 
-
-static void freeLclosure (lua_State *L, LClosure *cl) {
-  int i;
-  for (i = 0; i < cl->nupvalues; i++) {
-    UpVal *uv = cl->upvals[i];
-    if (uv)
-      luaC_upvdeccount(L, uv);
-  }
-  LMem<LClosure>::luaM_freemem(L, cl, sizeLClosure(cl->nupvalues));
-}
-
-
-static void freeobj (lua_State *L, GCObject *o) {
-  switch (o->tt) {
-    case LUA_TPROTO: luaF_freeproto(L, gco2p(o)); break;
-    case LUA_TLCL: {
-      freeLclosure(L, gco2lcl(o));
+static void freeobj (lua_State *L, GCObject *o)
+{
+  switch (o->tt)
+  {
+    case LUA_TPROTO:
+    {
+      Proto* f = gco2p(o);
+      LMem<Instruction>::luaM_freearray(L, f->code, f->sizecode);
+      LMem<Proto*>::luaM_freearray(L, f->p, f->sizep);
+      LMem<TValue>::luaM_freearray(L, f->k, f->sizek);
+      LMem<int>::luaM_freearray(L, f->lineinfo, f->sizelineinfo);
+      LMem<LocVar>::luaM_freearray(L, f->locvars, f->sizelocvars);
+      LMem<Upvaldesc>::luaM_freearray(L, f->upvalues, f->sizeupvalues);
+      LMem<Proto>::luaM_free(L, f);
+      break;
+    }
+    case LUA_TLCL:
+    {
+      LClosure* closure = gco2lcl(o);
+      for (int32_t i = 0; i < closure->nupvalues; i++)
+        if (UpVal* upValue = closure->upvals[i])
+          luaC_upvdeccount(L, upValue);
+      LMem<LClosure>::luaM_freemem(L, closure, sizeLClosure(closure->nupvalues));
       break;
     }
     case LUA_TCCL:
     {
-      LMem<GCObject>::luaM_freemem(L, o, sizeCClosure(gco2ccl(o)->nupvalues));
+      CClosure* closure = gco2ccl(o);
+      LMem<CClosure>::luaM_freemem(L, closure, sizeCClosure(closure->nupvalues));
       break;
     }
-    case LUA_TTABLE: luaH_free(L, gco2t(o)); break;
-    case LUA_TTHREAD: luaE_freethread(L, gco2th(o)); break;
-    case LUA_TUSERDATA: LMem<GCObject>::luaM_freemem(L, o, sizeudata(gco2u(o))); break;
+    case LUA_TTABLE:
+    {
+      Table* t = gco2t(o);
+      if (!isdummy(t))
+        LMem<Node>::luaM_freearray(L, t->node, cast(size_t, sizenode(t)));
+      LMem<TValue>::luaM_freearray(L, t->array, t->sizearray);
+      LMem<Table>::luaM_free(L, t);
+      break;
+    }
+    case LUA_TTHREAD:
+    {
+      lua_State* L1 = gco2th(o);
+      lua_assert(!L1->mainThread);
+      luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
+      lua_assert(L1->openupval == NULL);
+      luai_userstatefree(L, L1);
+      freestack(L1);
+      LMem<lua_State>::luaM_free(L, L1);
+      break;
+    }
+    case LUA_TUSERDATA:
+    {
+      Udata* userData = gco2u(o);
+      LMem<Udata>::luaM_freemem(L, userData, sizeudata(userData));
+      break;
+    }
     case LUA_TSHRSTR:
-      luaS_remove(L, gco2ts(o));  /* remove it from hash table */
-      LMem<GCObject>::luaM_freemem(L, o, sizelstring(gco2ts(o)->shrlen));
-      break;
-    case LUA_TLNGSTR: {
-      LMem<GCObject>::luaM_freemem(L, o, sizelstring(gco2ts(o)->u.lnglen));
+    {
+      TString* s = gco2ts(o);
+      luaS_remove(L, s);  /* remove it from hash table */
+      LMem<TString>::luaM_freemem(L, s, sizelstring(s->shrlen));
       break;
     }
-    default: lua_assert(0);
+    case LUA_TLNGSTR:
+    {
+      TString* s = gco2ts(o);
+      LMem<TString>::luaM_freemem(L, s, sizelstring(s->u.lnglen));
+      break;
+    }
+    default: lua_assert(false);
   }
 }
 

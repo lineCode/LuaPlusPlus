@@ -9,10 +9,15 @@ public:
     (void)osize;  /* not used */
     if (nsize == 0)
     {
-      free(ptr);
+      LuaAllocator::free(ptr);
       return nullptr;
     }
   
-    return static_cast<T*>(realloc(ptr, nsize));
+    return static_cast<T*>(::realloc(ptr, nsize));
+  }
+
+  static void free(T* ptr)
+  {
+    ::free(ptr);
   }
 };

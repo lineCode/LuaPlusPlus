@@ -397,9 +397,9 @@ static void rehash (lua_State *L, Table *t, const TValue *ek) {
 */
 
 
-Table *luaH_new (lua_State *L) {
-  GCObject *o = luaC_newobj(L, LUA_TTABLE, sizeof(Table));
-  Table *t = gco2t(o);
+Table *luaH_new (lua_State *L)
+{
+  Table* t = luaC_newobj<Table>(L, LUA_TTABLE, sizeof(Table));
   t->metatable = NULL;
   t->flags = cast_byte(~0);
   t->array = NULL;
@@ -407,15 +407,6 @@ Table *luaH_new (lua_State *L) {
   setnodevector(L, t, 0);
   return t;
 }
-
-
-void luaH_free (lua_State *L, Table *t) {
-  if (!isdummy(t))
-    LMem<Node>::luaM_freearray(L, t->node, cast(size_t, sizenode(t)));
-  LMem<TValue>::luaM_freearray(L, t->array, t->sizearray);
-  LMem<Table>::luaM_free(L, t);
-}
-
 
 static Node *getfreepos (Table *t) {
   if (!isdummy(t)) {

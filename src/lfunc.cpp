@@ -19,19 +19,19 @@
 
 
 CClosure *luaF_newCclosure (lua_State *L, int n) {
-  GCObject *o = luaC_newobj(L, LUA_TCCL, sizeCClosure(n));
-  CClosure *c = gco2ccl(o);
+  CClosure* c = luaC_newobj<CClosure>(L, LUA_TCCL, sizeCClosure(n));
   c->nupvalues = cast_byte(n);
   return c;
 }
 
 
-LClosure *luaF_newLclosure (lua_State *L, int n) {
-  GCObject *o = luaC_newobj(L, LUA_TLCL, sizeLClosure(n));
-  LClosure *c = gco2lcl(o);
-  c->p = NULL;
+LClosure *luaF_newLclosure (lua_State *L, int n)
+{
+  LClosure* c = luaC_newobj<LClosure>(L, LUA_TLCL, sizeLClosure(n));
+  c->p = nullptr;
   c->nupvalues = cast_byte(n);
-  while (n--) c->upvals[n] = NULL;
+  while (n--)
+    c->upvals[n] = nullptr;
   return c;
 }
 
@@ -93,42 +93,28 @@ void luaF_close (lua_State *L, StkId level) {
 
 
 Proto *luaF_newproto (lua_State *L) {
-  GCObject *o = luaC_newobj(L, LUA_TPROTO, sizeof(Proto));
-  Proto *f = gco2p(o);
-  f->k = NULL;
+  Proto* f = luaC_newobj<Proto>(L, LUA_TPROTO, sizeof(Proto));
+  f->k = nullptr;
   f->sizek = 0;
-  f->p = NULL;
+  f->p = nullptr;
   f->sizep = 0;
-  f->code = NULL;
-  f->cache = NULL;
+  f->code = nullptr;
+  f->cache = nullptr;
   f->sizecode = 0;
-  f->lineinfo = NULL;
+  f->lineinfo = nullptr;
   f->sizelineinfo = 0;
-  f->upvalues = NULL;
+  f->upvalues = nullptr;
   f->sizeupvalues = 0;
   f->numparams = 0;
   f->is_vararg = 0;
   f->maxstacksize = 0;
-  f->locvars = NULL;
+  f->locvars = nullptr;
   f->sizelocvars = 0;
   f->linedefined = 0;
   f->lastlinedefined = 0;
-  f->source = NULL;
+  f->source = nullptr;
   return f;
 }
-
-
-void luaF_freeproto (lua_State *L, Proto *f)
-{
-  LMem<Instruction>::luaM_freearray(L, f->code, f->sizecode);
-  LMem<Proto*>::luaM_freearray(L, f->p, f->sizep);
-  LMem<TValue>::luaM_freearray(L, f->k, f->sizek);
-  LMem<int>::luaM_freearray(L, f->lineinfo, f->sizelineinfo);
-  LMem<LocVar>::luaM_freearray(L, f->locvars, f->sizelocvars);
-  LMem<Upvaldesc>::luaM_freearray(L, f->upvalues, f->sizeupvalues);
-  LMem<Proto>::luaM_free(L, f);
-}
-
 
 /*
 ** Look for n-th local variable at line 'line' in function 'func'.

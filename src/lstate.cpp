@@ -146,7 +146,8 @@ static void stack_init (lua_State *L1, lua_State *L) {
 }
 
 
-static void freestack (lua_State *L) {
+void freestack (lua_State *L)
+{
   if (L->stack == nullptr)
     return;  /* stack not completely built yet */
   L->ci = &L->base_ci;  /* free the entire 'ci' list */
@@ -229,16 +230,17 @@ static void close_state (lua_State* L)
   LMem<TString*>::luaM_freearray(L, L->globalState->strt.hash, L->globalState->strt.size);
   freestack(L);
   lua_assert(g->getTotalBytes() == sizeof(lua_MainThread));
-  LuaAllocator<lua_MainThread>::alloc(L->mainThread, sizeof(lua_MainThread), 0);  /* free main block */
+  LuaAllocator<lua_MainThread>::free(L->mainThread);  /* free main block */
 }
 
 
-LUA_API lua_State *lua_newthread (lua_State *L) {
+LUA_API lua_State *lua_newthread (lua_State *L)
+{
   global_State *g = L->globalState;
   lua_lock(L);
   luaC_checkGC(L);
   /* create new thread */
-  lua_State* L1 = LMem<lua_State>::luaM_newobject(L, LUA_TTHREAD, sizeof(lua_State));
+  lua_State* L1 = LMem<lua_State>::luaM_new(L);
   L1->mainThread = nullptr;
   L1->marked = luaC_white(g);
   L1->tt = LUA_TTHREAD;
@@ -258,18 +260,6 @@ LUA_API lua_State *lua_newthread (lua_State *L) {
   lua_unlock(L);
   return L1;
 }
-
-
-void luaE_freethread (lua_State *L, lua_State *L1)
-{
-  lua_assert(!L1->mainThread);
-  luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
-  lua_assert(L1->openupval == NULL);
-  luai_userstatefree(L, L1);
-  freestack(L1);
-  LMem<lua_State>::luaM_free(L, L1);
-}
-
 
 LUA_API lua_State *lua_newstate ()
 {

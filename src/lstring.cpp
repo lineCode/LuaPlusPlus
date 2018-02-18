@@ -131,16 +131,11 @@ void luaS_init (lua_State *L) {
 ** creates a new string object
 */
 static TString *createstrobj (lua_State *L, size_t l, int tag, uint32_t h) {
-  TString *ts;
-  GCObject *o;
-  size_t totalsize;  /* total size of TString object */
-  totalsize = sizelstring(l);
-  o = luaC_newobj(L, tag, totalsize);
-  ts = gco2ts(o);
-  ts->hash = h;
-  ts->extra = 0;
-  getstr(ts)[l] = '\0';  /* ending 0 */
-  return ts;
+  TString* result = luaC_newobj<TString>(L, tag, sizelstring(l) /* total size of TString object */ );
+  result->hash = h;
+  result->extra = 0;
+  getstr(result)[l] = '\0';  /* ending 0 */
+  return result;
 }
 
 
@@ -233,16 +228,13 @@ TString *luaS_new (lua_State *L, const char *str) {
 }
 
 
-Udata *luaS_newudata (lua_State *L, size_t s) {
-  Udata *u;
-  GCObject *o;
+Udata* luaS_newudata (lua_State *L, size_t s)
+{
   if (s > MAX_SIZE - sizeof(Udata))
     luaM_toobig(L);
-  o = luaC_newobj(L, LUA_TUSERDATA, sizeludata(s));
-  u = gco2u(o);
+  Udata* u = luaC_newobj<Udata>(L, LUA_TUSERDATA, sizeludata(s));
   u->len = s;
-  u->metatable = NULL;
+  u->metatable = nullptr;
   setuservalue(L, u, luaO_nilobject);
   return u;
 }
-
