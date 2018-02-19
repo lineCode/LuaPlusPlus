@@ -507,11 +507,13 @@ public:
   UpVal *upvals[1];  /* list of upvalues */
 };
 
+[[maybe_unused]]
 static size_t sizeCClosure(int32_t upvalues)
 {
   return sizeof(CClosure) + (sizeof(TValue) * (upvalues - 1));
 }
 
+[[maybe_unused]]
 static size_t sizeLClosure(int32_t upvalues)
 {
   return sizeof(LClosure) + (sizeof(TValue*) * (upvalues - 1));
