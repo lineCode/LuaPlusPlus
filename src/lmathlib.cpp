@@ -318,11 +318,11 @@ static const luaL_Reg mathlib[] = {
   {"tan",   math_tan},
   {"type", math_type},
   /* placeholders */
-  {"pi", NULL},
-  {"huge", NULL},
-  {"maxinteger", NULL},
-  {"mininteger", NULL},
-  {NULL, NULL}
+  {"pi", nullptr},
+  {"huge", nullptr},
+  {"maxinteger", nullptr},
+  {"mininteger", nullptr},
+  {nullptr, nullptr}
 };
 
 

@@ -75,11 +75,11 @@ void luaS_resize (lua_State *L, int newsize)
   if (newsize > tb->size) {  /* grow table if needed */
     LMem<TString*>::luaM_reallocvector(L, tb->hash, tb->size, newsize);
     for (i = tb->size; i < newsize; i++)
-      tb->hash[i] = NULL;
+      tb->hash[i] = nullptr;
   }
   for (i = 0; i < tb->size; i++) {  /* rehash */
     TString *p = tb->hash[i];
-    tb->hash[i] = NULL;
+    tb->hash[i] = nullptr;
     while (p) {  /* for each node in the list */
       TString *hnext = p->u.hnext;  /* save next */
       uint32_t h = lmod(p->hash, newsize);  /* new position */
@@ -166,7 +166,7 @@ static TString *internshrstr (lua_State *L, const char *str, size_t l) {
   uint32_t h = luaS_hash(str, l, g->seed);
   TString **list = &g->strt.hash[lmod(h, g->strt.size)];
   lua_assert(str != NULL);  /* otherwise 'memcmp'/'memcpy' are undefined */
-  for (ts = *list; ts != NULL; ts = ts->u.hnext) {
+  for (ts = *list; ts != nullptr; ts = ts->u.hnext) {
     if (l == ts->shrlen &&
         (memcmp(str, getstr(ts), l * sizeof(char)) == 0)) {
       /* found! */

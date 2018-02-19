@@ -56,7 +56,7 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
   UpVal *p;
   UpVal *uv;
   lua_assert(isintwups(L) || L->openupval == NULL);
-  while (*pp != NULL && (p = *pp)->v >= level) {
+  while (*pp != nullptr && (p = *pp)->v >= level) {
     lua_assert(upisopen(p));
     if (p->v == level)  /* found a corresponding upvalue? */
       return p;  /* return it */
@@ -79,7 +79,7 @@ UpVal *luaF_findupval (lua_State *L, StkId level) {
 
 void luaF_close (lua_State *L, StkId level) {
   UpVal *uv;
-  while (L->openupval != NULL && (uv = L->openupval)->v >= level) {
+  while (L->openupval != nullptr && (uv = L->openupval)->v >= level) {
     lua_assert(upisopen(uv));
     L->openupval = uv->u.open.next;  /* remove from 'open' list */
     if (uv->refcount == 0)  /* no references? */
@@ -130,6 +130,6 @@ const char *luaF_getlocalname (const Proto *f, int local_number, int pc) {
         return getstr(f->locvars[i].varname);
     }
   }
-  return NULL;  /* not found */
+  return nullptr;  /* not found */
 }
 

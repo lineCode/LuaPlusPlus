@@ -285,7 +285,7 @@ static const char *l_str2dloc (const char *s, lua_Number *result, int mode) {
   char *endptr;
   *result = (mode == 'x') ? lua_strx2number(s, &endptr)  /* try to convert */
                           : lua_str2number(s, &endptr);
-  if (endptr == s) return NULL;  /* nothing recognized? */
+  if (endptr == s) return nullptr;  /* nothing recognized? */
   while (lisspace(cast_uchar(*endptr))) endptr++;  /* skip trailing spaces */
   return (*endptr == '\0') ? endptr : NULL;  /* OK if no trailing characters */
 }
@@ -309,17 +309,17 @@ static const char *l_str2d (const char *s, lua_Number *result) {
   const char *pmode = strpbrk(s, ".xXnN");
   int mode = pmode ? ltolower(cast_uchar(*pmode)) : 0;
   if (mode == 'n')  /* reject 'inf' and 'nan' */
-    return NULL;
+    return nullptr;
   endptr = l_str2dloc(s, result, mode);  /* try to convert */
-  if (endptr == NULL) {  /* failed? may be a different locale */
+  if (endptr == nullptr) {  /* failed? may be a different locale */
     char buff[L_MAXLENNUM + 1];
     const char *pdot = strchr(s, '.');
-    if (strlen(s) > L_MAXLENNUM || pdot == NULL)
-      return NULL;  /* string too long or no dot; fail */
+    if (strlen(s) > L_MAXLENNUM || pdot == nullptr)
+      return nullptr;  /* string too long or no dot; fail */
     strcpy(buff, s);  /* copy string to buffer */
     buff[pdot - s] = lua_getlocaledecpoint();  /* correct decimal point */
     endptr = l_str2dloc(buff, result, mode);  /* try again */
-    if (endptr != NULL)
+    if (endptr != nullptr)
       endptr = s + (endptr - buff);  /* make relative to 's' */
   }
   return endptr;
@@ -347,13 +347,13 @@ static const char *l_str2int (const char *s, lua_Integer *result) {
     for (; lisdigit(cast_uchar(*s)); s++) {
       int d = *s - '0';
       if (a >= MAXBY10 && (a > MAXBY10 || d > MAXLASTD + neg))  /* overflow? */
-        return NULL;  /* do not accept it (as integer) */
+        return nullptr;  /* do not accept it (as integer) */
       a = a * 10 + d;
       empty = 0;
     }
   }
   while (lisspace(cast_uchar(*s))) s++;  /* skip trailing spaces */
-  if (empty || *s != '\0') return NULL;  /* something wrong in the numeral */
+  if (empty || *s != '\0') return nullptr;  /* something wrong in the numeral */
   else {
     *result = l_castU2S((neg) ? 0u - a : a);
     return s;
@@ -364,10 +364,10 @@ static const char *l_str2int (const char *s, lua_Integer *result) {
 size_t luaO_str2num (const char *s, TValue *o) {
   lua_Integer i; lua_Number n;
   const char *e;
-  if ((e = l_str2int(s, &i)) != NULL) {  /* try as an integer */
+  if ((e = l_str2int(s, &i)) != nullptr) {  /* try as an integer */
     setivalue(o, i);
   }
-  else if ((e = l_str2d(s, &n)) != NULL) {  /* else try as a float */
+  else if ((e = l_str2d(s, &n)) != nullptr) {  /* else try as a float */
     setfltvalue(o, n);
   }
   else
@@ -432,12 +432,12 @@ const char *luaO_pushvfstring (lua_State *L, const char *fmt, va_list argp) {
   int n = 0;
   for (;;) {
     const char *e = strchr(fmt, '%');
-    if (e == NULL) break;
+    if (e == nullptr) break;
     pushstr(L, fmt, e - fmt);
     switch (*(e+1)) {
       case 's': {  /* zero-terminated string */
         const char *s = va_arg(argp, char *);
-        if (s == NULL) s = "(null)";
+        if (s == nullptr) s = "(null)";
         pushstr(L, s, strlen(s));
         break;
       }
@@ -537,11 +537,11 @@ void luaO_chunkid (char *out, const char *source, size_t bufflen) {
     const char *nl = strchr(source, '\n');  /* find first new line (if any) */
     addstr(out, PRE, LL(PRE));  /* add prefix */
     bufflen -= LL(PRE RETS POS) + 1;  /* save space for prefix+suffix+'\0' */
-    if (l < bufflen && nl == NULL) {  /* small one-line source? */
+    if (l < bufflen && nl == nullptr) {  /* small one-line source? */
       addstr(out, source, l);  /* keep it */
     }
     else {
-      if (nl != NULL) l = nl - source;  /* stop at first newline */
+      if (nl != nullptr) l = nl - source;  /* stop at first newline */
       if (l > bufflen) l = bufflen;
       addstr(out, source, l);
       addstr(out, RETS, LL(RETS));

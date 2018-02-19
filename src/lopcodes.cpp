@@ -65,7 +65,7 @@ LUAI_DDEF const char *const luaP_opnames[NUM_OPCODES+1] = {
   "CLOSURE",
   "VARARG",
   "EXTRAARG",
-  NULL
+  nullptr
 };
 
 

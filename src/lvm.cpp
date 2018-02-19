@@ -161,7 +161,7 @@ void luaV_finishget (lua_State *L, const TValue *t, TValue *key, StkId val,
   int loop;  /* counter to avoid infinite loops */
   const TValue *tm;  /* metamethod */
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
-    if (slot == NULL) {  /* 't' is not a table? */
+    if (slot == nullptr) {  /* 't' is not a table? */
       lua_assert(!ttistable(t));
       tm = luaT_gettmbyobj(L, t, TM_INDEX);
       if (ttisnil(tm))
@@ -171,7 +171,7 @@ void luaV_finishget (lua_State *L, const TValue *t, TValue *key, StkId val,
     else {  /* 't' is a table */
       lua_assert(ttisnil(slot));
       tm = fasttm(L, hvalue(t)->metatable, TM_INDEX);  /* table's metamethod */
-      if (tm == NULL) {  /* no metamethod? */
+      if (tm == nullptr) {  /* no metamethod? */
         setnilvalue(val);  /* result is nil */
         return;
       }
@@ -204,11 +204,11 @@ void luaV_finishset (lua_State *L, const TValue *t, TValue *key,
   int loop;  /* counter to avoid infinite loops */
   for (loop = 0; loop < MAXTAGLOOP; loop++) {
     const TValue *tm;  /* '__newindex' metamethod */
-    if (slot != NULL) {  /* is 't' a table? */
+    if (slot != nullptr) {  /* is 't' a table? */
       Table *h = hvalue(t);  /* save 't' table */
       lua_assert(ttisnil(slot));  /* old value must be nil */
       tm = fasttm(L, h->metatable, TM_NEWINDEX);  /* get metamethod */
-      if (tm == NULL) {  /* no metamethod? */
+      if (tm == nullptr) {  /* no metamethod? */
         if (slot == luaO_nilobject)  /* no previous entry? */
           slot = luaH_newkey(L, h, key);  /* create one */
         /* no metamethod and (now) there is an entry with given key */
@@ -425,24 +425,24 @@ int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
     case LUA_TLNGSTR: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
     case LUA_TUSERDATA: {
       if (uvalue(t1) == uvalue(t2)) return 1;
-      else if (L == NULL) return 0;
+      else if (L == nullptr) return 0;
       tm = fasttm(L, uvalue(t1)->metatable, TM_EQ);
-      if (tm == NULL)
+      if (tm == nullptr)
         tm = fasttm(L, uvalue(t2)->metatable, TM_EQ);
       break;  /* will try TM */
     }
     case LUA_TTABLE: {
       if (hvalue(t1) == hvalue(t2)) return 1;
-      else if (L == NULL) return 0;
+      else if (L == nullptr) return 0;
       tm = fasttm(L, hvalue(t1)->metatable, TM_EQ);
-      if (tm == NULL)
+      if (tm == nullptr)
         tm = fasttm(L, hvalue(t2)->metatable, TM_EQ);
       break;  /* will try TM */
     }
     default:
       return gcvalue(t1) == gcvalue(t2);
   }
-  if (tm == NULL)  /* no TM? */
+  if (tm == nullptr)  /* no TM? */
     return 0;  /* objects are different */
   luaT_callTM(L, tm, t1, t2, L->top, 1);  /* call TM */
   return !l_isfalse(L->top);
@@ -608,14 +608,14 @@ lua_Integer luaV_shiftl (lua_Integer x, lua_Integer y) {
 */
 static LClosure *getcached (Proto *p, UpVal **encup, StkId base) {
   LClosure *c = p->cache;
-  if (c != NULL) {  /* is there a cached closure? */
+  if (c != nullptr) {  /* is there a cached closure? */
     int nup = p->sizeupvalues;
     Upvaldesc *uv = p->upvalues;
     int i;
     for (i = 0; i < nup; i++) {  /* check whether it has right upvalues */
       TValue *v = uv[i].instack ? base + uv[i].idx : encup[uv[i].idx]->v;
       if (c->upvals[i]->v != v)
-        return NULL;  /* wrong upvalue; cannot reuse closure */
+        return nullptr;  /* wrong upvalue; cannot reuse closure */
     }
   }
   return c;  /* return cached closure (or NULL if no cached closure) */
@@ -1284,7 +1284,7 @@ void luaV_execute (lua_State *L) {
       vmcase(OP_CLOSURE) {
         Proto *p = cl->p->p[GETARG_Bx(i)];
         LClosure *ncl = getcached(p, cl->upvals, base);  /* cached closure */
-        if (ncl == NULL)  /* no match? */
+        if (ncl == nullptr)  /* no match? */
           pushclosure(L, p, cl->upvals, base, ra);  /* create a new one */
         else
           setclLvalue(L, ra, ncl);  /* push cashed closure */

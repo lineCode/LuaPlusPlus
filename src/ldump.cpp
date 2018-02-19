@@ -71,7 +71,7 @@ static void DumpInteger (lua_Integer x, DumpState *D) {
 
 
 static void DumpString (const TString *s, DumpState *D) {
-  if (s == NULL)
+  if (s == nullptr)
     DumpByte(0, D);
   else {
     size_t size = tsslen(s) + 1;  /* include trailing '\0' */
@@ -165,7 +165,7 @@ static void DumpDebug (const Proto *f, DumpState *D) {
 
 static void DumpFunction (const Proto *f, TString *psource, DumpState *D) {
   if (D->strip || f->source == psource)
-    DumpString(NULL, D);  /* no debug info or same source as its parent */
+    DumpString(nullptr, D);  /* no debug info or same source as its parent */
   else
     DumpString(f->source, D);
   DumpInt(f->linedefined, D);
@@ -209,7 +209,7 @@ int luaU_dump(lua_State *L, const Proto *f, lua_Writer w, void *data,
   D.status = 0;
   DumpHeader(&D);
   DumpByte(f->sizeupvalues, &D);
-  DumpFunction(f, NULL, &D);
+  DumpFunction(f, nullptr, &D);
   return D.status;
 }
 

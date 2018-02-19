@@ -100,7 +100,7 @@
 
 
 
-static lua_State *globalL = NULL;
+static lua_State *globalL = nullptr;
 
 static const char *progname = LUA_PROGNAME;
 
@@ -110,7 +110,7 @@ static const char *progname = LUA_PROGNAME;
 */
 static void lstop (lua_State *L, lua_Debug *ar) {
   (void)ar;  /* unused arg. */
-  lua_sethook(L, NULL, 0, 0);  /* reset hook */
+  lua_sethook(L, nullptr, 0, 0);  /* reset hook */
   luaL_error(L, "interrupted!");
 }
 
@@ -178,7 +178,7 @@ static int report (lua_State *L, int status) {
 */
 static int msghandler (lua_State *L) {
   const char *msg = lua_tostring(L, 1);
-  if (msg == NULL) {  /* is error object not a string? */
+  if (msg == nullptr) {  /* is error object not a string? */
     if (luaL_callmeta(L, 1, "__tostring") &&  /* does it have a metamethod */
         lua_type(L, -1) == LUA_TSTRING)  /* that produces a string? */
       return 1;  /* that is the message */
@@ -274,7 +274,7 @@ static const char *get_prompt (lua_State *L, int firstline) {
   const char *p;
   lua_getglobal(L, firstline ? "_PROMPT" : "_PROMPT2");
   p = lua_tostring(L, -1);
-  if (p == NULL) p = (firstline ? LUA_PROMPT : LUA_PROMPT2);
+  if (p == nullptr) p = (firstline ? LUA_PROMPT : LUA_PROMPT2);
   return p;
 }
 
@@ -405,7 +405,7 @@ static void l_print (lua_State *L) {
 static void doREPL (lua_State *L) {
   int status;
   const char *oldprogname = progname;
-  progname = NULL;  /* no 'progname' on errors in interactive mode */
+  progname = nullptr;  /* no 'progname' on errors in interactive mode */
   while ((status = loadline(L)) != -1) {
     if (status == LUA_OK)
       status = docall(L, 0, LUA_MULTRET);
@@ -438,7 +438,7 @@ static int handle_script (lua_State *L, char **argv) {
   int status;
   const char *fname = argv[0];
   if (strcmp(fname, "-") == 0 && strcmp(argv[-1], "--") != 0)
-    fname = NULL;  /* stdin */
+    fname = nullptr;  /* stdin */
   status = luaL_loadfile(L, fname);
   if (status == LUA_OK) {
     int n = pushargs(L);  /* push arguments to script */
@@ -465,7 +465,7 @@ static int handle_script (lua_State *L, char **argv) {
 static int collectargs (char **argv, int *first) {
   int args = 0;
   int i;
-  for (i = 1; argv[i] != NULL; i++) {
+  for (i = 1; argv[i] != nullptr; i++) {
     *first = i;
     if (argv[i][0] != '-')  /* not an option? */
         return args;  /* stop handling options */
@@ -494,7 +494,7 @@ static int collectargs (char **argv, int *first) {
       case 'l':  /* both options need an argument */
         if (argv[i][2] == '\0') {  /* no concatenated argument? */
           i++;  /* try next 'argv' */
-          if (argv[i] == NULL || argv[i][0] == '-')
+          if (argv[i] == nullptr || argv[i][0] == '-')
             return has_error;  /* no next argument or it is another option */
         }
         break;
@@ -535,11 +535,11 @@ static int runargs (lua_State *L, char **argv, int n) {
 static int handle_luainit (lua_State *L) {
   const char *name = "=" LUA_INITVARVERSION;
   const char *init = getenv(name + 1);
-  if (init == NULL) {
+  if (init == nullptr) {
     name = "=" LUA_INIT_VAR;
     init = getenv(name + 1);  /* try alternative name */
   }
-  if (init == NULL) return LUA_OK;
+  if (init == nullptr) return LUA_OK;
   else if (init[0] == '@')
     return dofile(L, init+1);
   else
@@ -586,7 +586,7 @@ static int pmain (lua_State *L) {
       print_version();
       doREPL(L);  /* do read-eval-print loop */
     }
-    else dofile(L, NULL);  /* executes stdin as a file */
+    else dofile(L, nullptr);  /* executes stdin as a file */
   }
   lua_pushboolean(L, 1);  /* signal no errors */
   return 1;

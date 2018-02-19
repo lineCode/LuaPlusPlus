@@ -307,7 +307,7 @@ static void setnodevector (lua_State *L, Table *t, uint32_t size) {
   if (size == 0) {  /* no elements to hash part? */
     t->node = cast(Node *, dummynode);  /* use common 'dummynode' */
     t->lsizenode = 0;
-    t->lastfree = NULL;  /* signal that it is using dummy node */
+    t->lastfree = nullptr;  /* signal that it is using dummy node */
   }
   else {
     int i;
@@ -400,9 +400,9 @@ static void rehash (lua_State *L, Table *t, const TValue *ek) {
 Table *luaH_new (lua_State *L)
 {
   Table* t = LGCFactory::luaC_newobj<Table>(L, LUA_TTABLE, sizeof(Table));
-  t->metatable = NULL;
+  t->metatable = nullptr;
   t->flags = cast_byte(~0);
-  t->array = NULL;
+  t->array = nullptr;
   t->sizearray = 0;
   setnodevector(L, t, 0);
   return t;
@@ -416,7 +416,7 @@ static Node *getfreepos (Table *t) {
         return t->lastfree;
     }
   }
-  return NULL;  /* could not find a free place */
+  return nullptr;  /* could not find a free place */
 }
 
 
@@ -445,7 +445,7 @@ TValue *luaH_newkey (lua_State *L, Table *t, const TValue *key) {
   if (!ttisnil(gval(mp)) || isdummy(t)) {  /* main position is taken? */
     Node *othern;
     Node *f = getfreepos(t);  /* get a free place */
-    if (f == NULL) {  /* cannot find a free place? */
+    if (f == nullptr) {  /* cannot find a free place? */
       rehash(L, t, key);  /* grow table */
       /* whatever called 'newkey' takes care of TM cache */
       return luaH_set(L, t, key);  /* insert key into grown table */

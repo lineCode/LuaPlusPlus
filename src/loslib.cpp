@@ -138,7 +138,7 @@ static time_t l_checktime (lua_State *L, int arg) {
 static int os_execute (lua_State *L) {
   const char *cmd = luaL_optstring(L, 1, NULL);
   int stat = system(cmd);
-  if (cmd != NULL)
+  if (cmd != nullptr)
     return luaL_execresult(L, stat);
   else {
     lua_pushboolean(L, stat);  /* true if there is a shell */
@@ -156,7 +156,7 @@ static int os_remove (lua_State *L) {
 static int os_rename (lua_State *L) {
   const char *fromname = luaL_checkstring(L, 1);
   const char *toname = luaL_checkstring(L, 2);
-  return luaL_fileresult(L, rename(fromname, toname) == 0, NULL);
+  return luaL_fileresult(L, rename(fromname, toname) == 0, nullptr);
 }
 
 
@@ -289,7 +289,7 @@ static int os_date (lua_State *L) {
   }
   else
     stm = l_localtime(&t, &tmr);
-  if (stm == NULL)  /* invalid date? */
+  if (stm == nullptr)  /* invalid date? */
     luaL_error(L, "time result cannot be represented in this installation");
   if (strcmp(s, "*t") == 0) {
     lua_createtable(L, 0, 9);  /* 9 = number of fields */
@@ -321,7 +321,7 @@ static int os_date (lua_State *L) {
 static int os_time (lua_State *L) {
   time_t t;
   if (lua_isnoneornil(L, 1))  /* called without args? */
-    t = time(NULL);  /* get current time */
+    t = time(nullptr);  /* get current time */
   else {
     struct tm ts;
     luaL_checktype(L, 1, LUA_TTABLE);
@@ -357,7 +357,7 @@ static int os_setlocale (lua_State *L) {
   static const int cat[] = {LC_ALL, LC_COLLATE, LC_CTYPE, LC_MONETARY,
                       LC_NUMERIC, LC_TIME};
   static const char *const catnames[] = {"all", "collate", "ctype", "monetary",
-     "numeric", "time", NULL};
+     "numeric", "time", nullptr};
   const char *l = luaL_optstring(L, 1, NULL);
   int op = luaL_checkoption(L, 2, "all", catnames);
   lua_pushstring(L, setlocale(cat[op], l));
@@ -389,7 +389,7 @@ static const luaL_Reg syslib[] = {
   {"setlocale", os_setlocale},
   {"time",      os_time},
   {"tmpname",   os_tmpname},
-  {NULL, NULL}
+  {nullptr, nullptr}
 };
 
 /* }====================================================== */

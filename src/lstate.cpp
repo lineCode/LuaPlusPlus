@@ -110,7 +110,7 @@ static void stack_init (lua_State *L1, lua_State *L)
   L1->stack_last = L1->stack + L1->stacksize - EXTRA_STACK;
   /* initialize first ci */
   ci = &L1->base_ci;
-  ci->next = ci->previous = NULL;
+  ci->next = ci->previous = nullptr;
   ci->callstatus = 0;
   ci->func = L1->top;
   setnilvalue(L1->top++);  /* 'function' entry for this 'ci' */
@@ -269,7 +269,7 @@ CallInfo *luaE_extendCI (lua_State *L) {
   lua_assert(L->ci->next == NULL);
   L->ci->next = ci;
   ci->previous = L->ci;
-  ci->next = NULL;
+  ci->next = nullptr;
   L->nci++;
   return ci;
 }
@@ -281,8 +281,8 @@ CallInfo *luaE_extendCI (lua_State *L) {
 void luaE_freeCI (lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next = ci->next;
-  ci->next = NULL;
-  while ((ci = next) != NULL) {
+  ci->next = nullptr;
+  while ((ci = next) != nullptr) {
     next = ci->next;
     LMem<CallInfo>::luaM_free(L, ci);
     L->nci--;
@@ -297,7 +297,7 @@ void luaE_shrinkCI (lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next2;  /* next's next */
   /* while there are two nexts */
-  while (ci->next != NULL && (next2 = ci->next->next) != NULL) {
+  while (ci->next != nullptr && (next2 = ci->next->next) != nullptr) {
     LMem<CallInfo>::luaM_free(L, ci->next);  /* free next */
     L->nci--;
     ci->next = next2;  /* remove 'next' from the list */
