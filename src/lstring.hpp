@@ -10,9 +10,9 @@
 #include <lstate.hpp>
 
 
-#define sizelstring(l)  (sizeof(union TStringAlign::UTString) + ((l) + 1) * sizeof(char))
+#define sizelstring(l)  (sizeof(TStringAlign::UTString) + ((l) + 1) * sizeof(char))
 
-#define sizeludata(l)	(sizeof(union UDataAlign::UUdata) + (l))
+#define sizeludata(l)	(sizeof(UDataAlign::UUdata) + (l))
 #define sizeudata(u)	sizeludata((u)->len)
 
 #define luaS_newliteral(L, s)	(luaS_newlstr(L, "" s, \
