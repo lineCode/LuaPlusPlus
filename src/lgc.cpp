@@ -668,7 +668,6 @@ void luaC_upvdeccount (lua_State *L, UpVal *uv)
 
 static void freeobj (lua_State* L, GCObject* o)
 {
-
   switch (o->tt)
   {
     case LUA_TPROTO: LGCFactory::luaC_freeobj(L, gco2p(o)); break;
@@ -683,39 +682,64 @@ static void freeobj (lua_State* L, GCObject* o)
   }
 }
 
-void LGCFactory::luaC_free(Proto* funcion)
+void LGCFactory::luaC_free(lua_State* L, Proto* function)
 {
-  funcion->~Proto();
+  function->~Proto();
+  LMem<Proto>::luaM_free(L, function);
 }
 
-void LGCFactory::luaC_free(LClosure* closure)
+void LGCFactory::luaC_free(lua_State* L, LClosure* closure)
 {
+  size_t size = sizeLClosure(closure->nupvalues);
   closure->~LClosure();
+  LMem<LClosure>::luaM_freemem(L, closure, size);
 }
 
-void LGCFactory::luaC_free(CClosure* closure)
+void LGCFactory::luaC_free(lua_State* L, CClosure* closure)
 {
+  size_t size = sizeCClosure(closure->nupvalues);
   closure->~CClosure();
+  LMem<CClosure>::luaM_freemem(L, closure, size);
 }
 
-void LGCFactory::luaC_free(Table* table)
+void LGCFactory::luaC_free(lua_State* L, Table* table)
 {
   table->~Table();
+  LMem<Table>::luaM_free(L, table);
 }
 
-void LGCFactory::luaC_free(lua_State* L1)
+void LGCFactory::luaC_free(lua_State* L, lua_State* L1)
 {
   delete L1;
 }
 
-void LGCFactory::luaC_free(Udata* udata)
+void LGCFactory::luaC_free(lua_State* L, Udata* udata)
 {
+  size_t size = sizeudata(udata);
   udata->~Udata();
+  LMem<Udata>::luaM_freemem(L, udata, size);
 }
 
-void LGCFactory::luaC_free(TString* string)
+void LGCFactory::luaC_free(lua_State* L, TString* string)
 {
-  string->~TString();
+  switch (string->tt)
+  {
+    case LUA_TSHRSTR:
+    {
+      size_t size = sizelstring(string->shrlen);
+      string->~TString();
+      LMem<TString>::luaM_freemem(L, string, size);
+      break;
+    }
+    case LUA_TLNGSTR:
+    {
+      size_t size = sizelstring(string->u.lnglen);
+      string->~TString();
+      LMem<TString>::luaM_freemem(L, string, size);
+      break;
+    }
+    default: lua_assert(false);
+  }
 }
 
 #define sweepwholelist(L,p)	sweeplist(L,p,MAX_LUMEM)

@@ -31,29 +31,11 @@ LUAI_DDEF const TValue luaO_nilobject_ = {NILCONSTANT};
 
 TString::~TString()
 {
-  lua_State* L = LGCFactory::getActiveState();
-  switch (this->tt)
-  {
-    case LUA_TSHRSTR:
-    {
-      luaS_remove(L, this);  /* remove it from hash table */
-      LMem<TString>::luaM_freemem(L, this, sizelstring(this->shrlen));
-      break;
-    }
-    case LUA_TLNGSTR:
-    {
-      LMem<TString>::luaM_freemem(L, this, sizelstring(this->u.lnglen));
-      break;
-    }
-    default: lua_assert(false);
-  }
+  if (this->tt == LUA_TSHRSTR)
+    luaS_remove(LGCFactory::getActiveState(), this);  /* remove it from hash table */
 }
 
-Udata::~Udata()
-{
-  lua_State* L = LGCFactory::getActiveState();
-  LMem<Udata>::luaM_freemem(L, this, sizeudata(this));
-}
+Udata::~Udata() = default;
 
 Proto::~Proto()
 {
@@ -64,14 +46,9 @@ Proto::~Proto()
   LMem<int>::luaM_freearray(L, this->lineinfo, this->sizelineinfo);
   LMem<LocVar>::luaM_freearray(L, this->locvars, this->sizelocvars);
   LMem<Upvaldesc>::luaM_freearray(L, this->upvalues, this->sizeupvalues);
-  LMem<Proto>::luaM_free(L, this);
 }
 
-CClosure::~CClosure()
-{
-  lua_State* L = LGCFactory::getActiveState();
-  LMem<CClosure>::luaM_freemem(L, this, sizeCClosure(this->nupvalues));
-}
+CClosure::~CClosure() = default;
 
 LClosure::~LClosure()
 {
@@ -79,7 +56,6 @@ LClosure::~LClosure()
   for (int32_t i = 0; i < this->nupvalues; i++)
     if (UpVal* upValue = this->upvals[i])
       luaC_upvdeccount(L, upValue);
-  LMem<LClosure>::luaM_freemem(L, this, sizeLClosure(this->nupvalues));
 }
 
 Table::~Table()
@@ -88,7 +64,6 @@ Table::~Table()
   if (!isdummy(this))
     LMem<Node>::luaM_freearray(L, this->node, cast(size_t, sizenode(this)));
   LMem<TValue>::luaM_freearray(L, this->array, this->sizearray);
-  LMem<Table>::luaM_free(L, this);
 }
 
 /*
