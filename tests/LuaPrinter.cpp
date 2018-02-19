@@ -3,6 +3,7 @@
 #include <lualib.hpp>
 #include <LuaPrinter.hpp>
 #include <StringUtil.hpp>
+#include <lstate.hpp>
 
 bool LuaPrinter::loaded = LuaPrinter::staticInit();
 
@@ -22,7 +23,8 @@ bool LuaPrinter::staticInit()
 }
 
 LuaPrinter::LuaPrinter()
-  : L(luaL_newstate())
+  : state(new lua_State())
+  , L(this->state.get())
 {
   if (!this->L)
     throw std::runtime_error("Failed to create Lua state.");
@@ -36,11 +38,7 @@ LuaPrinter::LuaPrinter()
   lua_setglobal(L, "printer");
 }
 
-LuaPrinter::~LuaPrinter()
-{
-  lua_close(this->L);
-  this->L = nullptr;
-}
+LuaPrinter::~LuaPrinter() = default;
 
 int32_t LuaPrinter::luaIndex(lua_State* L)
 {

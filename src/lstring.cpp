@@ -68,9 +68,10 @@ uint32_t luaS_hashlongstr (TString *ts) {
 /*
 ** resizes the string table
 */
-void luaS_resize (lua_State *L, int newsize) {
+void luaS_resize (lua_State *L, int newsize)
+{
   int i;
-  stringtable *tb = &L->globalState->strt;
+  Stringtable* tb = &L->globalState->strt;
   if (newsize > tb->size) {  /* grow table if needed */
     LMem<TString*>::luaM_reallocvector(L, tb->hash, tb->size, newsize);
     for (i = tb->size; i < newsize; i++)
@@ -147,7 +148,7 @@ TString *luaS_createlngstrobj (lua_State *L, size_t l) {
 
 
 void luaS_remove (lua_State *L, TString *ts) {
-  stringtable *tb = &L->globalState->strt;
+  Stringtable *tb = &L->globalState->strt;
   TString **p = &tb->hash[lmod(ts->hash, tb->size)];
   while (*p != ts)  /* find previous element */
     p = &(*p)->u.hnext;
@@ -214,7 +215,7 @@ TString *luaS_newlstr (lua_State *L, const char *str, size_t l) {
 TString *luaS_new (lua_State *L, const char *str) {
   uint32_t i = point2uint(str) % STRCACHE_N;  /* hash */
   int j;
-  TString **p = L->globalState->strcache[i];
+  auto& p = L->globalState->strcache[i];
   for (j = 0; j < STRCACHE_M; j++) {
     if (strcmp(str, getstr(p[j])) == 0)  /* hit? */
       return p[j];  /* that is it */

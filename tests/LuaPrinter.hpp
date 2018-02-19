@@ -1,7 +1,8 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-struct lua_State;
+#include <memory>
+class lua_State;
 
 class LuaPrinter
 {
@@ -30,6 +31,7 @@ public:
 private:
   void doString(const std::string& string);
 
+  std::unique_ptr<lua_State> state;
   lua_State* L = nullptr;
   std::vector<std::string> lines;
 

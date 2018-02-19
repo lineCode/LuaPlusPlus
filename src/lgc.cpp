@@ -668,7 +668,7 @@ void luaC_upvdeccount (lua_State *L, UpVal *uv)
 
 static void freeobj (lua_State* L, GCObject* o)
 {
-  
+
   switch (o->tt)
   {
     case LUA_TPROTO: LGCFactory::luaC_freeobj(L, gco2p(o)); break;
@@ -705,13 +705,7 @@ void LGCFactory::luaC_free(Table* table)
 
 void LGCFactory::luaC_free(lua_State* L1)
 {
-  lua_State* L = LGCFactory::getActiveState();
-  lua_assert(!L1->mainThread);
-  luaF_close(L1, L1->stack);  /* close all upvalues for this thread */
-  lua_assert(L1->openupval == NULL);
-  luai_userstatefree(L, L1);
-  freestack(L1);
-  LMem<lua_State>::luaM_free(L, L1);
+  delete L1;
 }
 
 void LGCFactory::luaC_free(Udata* udata)
@@ -817,9 +811,9 @@ static void GCTM (lua_State *L, int propagateerrors)
   if (tm != NULL && ttisfunction(tm)) {  /* is there a finalizer? */
     int status;
     uint8_t oldah = L->allowhook;
-    int running  = g->gcrunning;
+    bool running  = g->gcrunning;
     L->allowhook = 0;  /* stop debug hooks during GC metamethod */
-    g->gcrunning = 0;  /* avoid GC steps */
+    g->gcrunning = false;  /* avoid GC steps */
     setobj2s(L, L->top, tm);  /* push finalizer... */
     setobj2s(L, L->top + 1, &v);  /* ... and its argument */
     L->top += 2;  /* and (next line) call the finalizer */

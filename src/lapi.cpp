@@ -1039,12 +1039,12 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
   g = L->globalState;
   switch (what) {
     case LUA_GCSTOP: {
-      g->gcrunning = 0;
+      g->gcrunning = false;
       break;
     }
     case LUA_GCRESTART: {
       luaE_setdebt(g, 0);
-      g->gcrunning = 1;
+      g->gcrunning = true;
       break;
     }
     case LUA_GCCOLLECT: {
@@ -1063,7 +1063,7 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
     case LUA_GCSTEP: {
       l_mem debt = 1;  /* =1 to signal that it did an actual step */
       uint8_t oldrunning = g->gcrunning;
-      g->gcrunning = 1;  /* allow GC to run */
+      g->gcrunning = true;  /* allow GC to run */
       if (data == 0) {
         luaE_setdebt(g, -GCSTEPSIZE);  /* to do a "small" step */
         luaC_step(L);

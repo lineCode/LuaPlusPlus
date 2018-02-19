@@ -48,7 +48,7 @@
 #define LUA_ERRERR	6
 
 
-struct lua_State;
+class lua_State;
 
 
 /*
@@ -122,8 +122,6 @@ extern const char lua_ident[];
 /*
 ** state manipulation
 */
-LUA_API lua_State *(lua_newstate) ();
-LUA_API void       (lua_close) (lua_State *L);
 LUA_API lua_State *(lua_newthread) (lua_State *L);
 
 LUA_API lua_CFunction (lua_atpanic) (lua_State *L, lua_CFunction panicf);

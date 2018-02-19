@@ -9,6 +9,7 @@
 #include <lobject.hpp>
 #include <ltm.hpp>
 #include <lzio.hpp>
+#include <array>
 
 /*
 
@@ -46,15 +47,6 @@
 /* kinds of Garbage Collection */
 #define KGC_NORMAL	0
 #define KGC_EMERGENCY	1	/* gc was forced by an allocation failure */
-
-
-struct stringtable
-{
-  TString **hash;
-  int nuse;  /* number of elements */
-  int size;
-};
-
 
 /*
 ** Information about a call.
@@ -110,67 +102,81 @@ struct CallInfo
 #define setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
 #define getoah(st)	((st) & CIST_OAH)
 
+struct Stringtable
+{
+  TString** hash = nullptr;
+  int nuse = 0;  /* number of elements */
+  int size = 0;
+};
+
 /*
 ** 'global state', shared by all threads of this state
 */
-struct global_State
+class global_State
 {
+public:
+  global_State();
+  ~global_State();
+
   /* actual number of total bytes allocated */
   lu_mem getTotalBytes() const { return this->totalbytes + this->GCdebt; }
 
-  l_mem totalbytes;  /* number of bytes currently allocated - GCdebt */
-  l_mem GCdebt;  /* bytes allocated not yet compensated by the collector */
-  lu_mem GCmemtrav;  /* memory traversed by the GC */
-  lu_mem GCestimate;  /* an estimate of the non-garbage memory in use */
-  stringtable strt;  /* hash table for strings */
+  l_mem totalbytes = 0;  /* number of bytes currently allocated - GCdebt */
+  l_mem GCdebt = 0;  /* bytes allocated not yet compensated by the collector */
+  lu_mem GCmemtrav = 0;  /* memory traversed by the GC */
+  lu_mem GCestimate = 0;  /* an estimate of the non-garbage memory in use */
+  Stringtable strt;  /* hash table for strings */
   TValue l_registry;
-  uint32_t seed;  /* randomized seed for hashes */
-  uint8_t currentwhite;
-  uint8_t gcstate;  /* state of garbage collector */
-  uint8_t gckind;  /* kind of GC running */
-  uint8_t gcrunning;  /* true if GC is running */
-  GCObject *allgc;  /* list of all collectable objects */
-  GCObject **sweepgc;  /* current position of sweep in list */
-  GCObject *finobj;  /* list of collectable objects with finalizers */
-  GCObject *gray;  /* list of gray objects */
-  GCObject *grayagain;  /* list of objects to be traversed atomically */
-  GCObject *weak;  /* list of tables with weak values */
-  GCObject *ephemeron;  /* list of ephemeron tables (weak keys) */
-  GCObject *allweak;  /* list of all-weak tables */
-  GCObject *tobefnz;  /* list of userdata to be GC */
-  GCObject *fixedgc;  /* list of objects not to be collected */
-  struct lua_State *twups;  /* list of threads with open upvalues */
-  uint32_t gcfinnum;  /* number of finalizers to call in each GC step */
-  int gcpause;  /* size of pause between successive GCs */
-  int gcstepmul;  /* GC 'granularity' */
-  lua_CFunction panic;  /* to be called in unprotected errors */
-  struct lua_State *mainthread;
-  const lua_Number *version;  /* pointer to version number */
-  TString *memerrmsg;  /* memory-error message */
-  TString *tmname[TM_N];  /* array with tag-method names */
-  struct Table* mt[LUA_NUMTAGS];  /* metatables for basic types */
-  TString *strcache[STRCACHE_N][STRCACHE_M];  /* cache for strings in API */
+  uint32_t seed = 0;  /* randomized seed for hashes */
+  uint8_t currentwhite = 0;
+  uint8_t gcstate = 0;  /* state of garbage collector */
+  uint8_t gckind = 0;  /* kind of GC running */
+  bool gcrunning = false;  /* true if GC is running */
+  GCObject* allgc = nullptr;  /* list of all collectable objects */
+  GCObject** sweepgc = nullptr;  /* current position of sweep in list */
+  GCObject* finobj = nullptr;  /* list of collectable objects with finalizers */
+  GCObject* gray = nullptr;  /* list of gray objects */
+  GCObject* grayagain = nullptr;  /* list of objects to be traversed atomically */
+  GCObject* weak = nullptr;  /* list of tables with weak values */
+  GCObject* ephemeron = nullptr;  /* list of ephemeron tables (weak keys) */
+  GCObject* allweak = nullptr;  /* list of all-weak tables */
+  GCObject* tobefnz = nullptr;  /* list of userdata to be GC */
+  GCObject* fixedgc = nullptr;  /* list of objects not to be collected */
+  class lua_State* twups = nullptr;  /* list of threads with open upvalues */
+  uint32_t gcfinnum = 0;  /* number of finalizers to call in each GC step */
+  int gcpause = 0;  /* size of pause between successive GCs */
+  int gcstepmul = 0;  /* GC 'granularity' */
+  lua_CFunction panic = nullptr;  /* to be called in unprotected errors */
+  class lua_State* mainthread = nullptr;
+  const lua_Number* version = nullptr;  /* pointer to version number */
+  TString* memerrmsg = nullptr;  /* memory-error message */
+  std::array<TString*, TM_N> tmname {}; /* array with tag-method names */
+  std::array<Table*, LUA_NUMTAGS> mt {}; /* metatables for basic types */
+  std::array<std::array<TString*, STRCACHE_M>, STRCACHE_N> strcache {}; /* cache for strings in API */
 };
 
-struct lua_MainThread;
 struct lua_ErrorStatus;
 /*
 ** 'per thread' state
 */
-struct lua_State : GCObject
+class lua_State : public GCObject
 {
+public:
+  lua_State();
+  explicit lua_State(lua_State* L);
+  ~lua_State();
+
   unsigned short nci;  /* number of items in 'ci' list */
   uint8_t status;
   StkId top;  /* first free slot in the stack */
   global_State* globalState;
-  lua_MainThread* mainThread;
   CallInfo *ci;  /* call info for current function */
   const Instruction *oldpc;  /* last pc traced */
   StkId stack_last;  /* last free slot in the stack */
   StkId stack;  /* stack base */
   UpVal *openupval;  /* list of open upvalues in this stack */
   GCObject *gclist;
-  struct lua_State *twups;  /* list of threads with open upvalues */
+  lua_State* twups;  /* list of threads with open upvalues */
   struct lua_ErrorStatus* errorStatus;  /* current error data */
   CallInfo base_ci;  /* CallInfo for first level (C calling Lua) */
   volatile lua_Hook hook;
@@ -183,16 +189,6 @@ struct lua_State : GCObject
   l_signalT hookmask;
   uint8_t allowhook;
 };
-
-/*
-** Main thread combines a thread state and the global state
-*/
-struct lua_MainThread
-{
-  lua_State state;
-  global_State global;
-};
-
 
 /* macros to convert a GCObject into a specific value */
 #define gco2ts(o) check_exp(novariant((o)->tt) == LUA_TSTRING, static_cast<TString*>(o))
