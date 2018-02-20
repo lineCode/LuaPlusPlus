@@ -1166,7 +1166,8 @@ typedef struct Header {
 /*
 ** options for pack/unpack
 */
-typedef enum KOption {
+enum KOption : uint8_t
+{
   Kint,		/* signed integers */
   Kuint,	/* unsigned integers */
   Kfloat,	/* floating-point numbers */
@@ -1176,7 +1177,7 @@ typedef enum KOption {
   Kpadding,	/* padding */
   Kpaddalign,	/* padding for alignment */
   Knop		/* no-op (configuration or spaces) */
-} KOption;
+};
 
 
 /*

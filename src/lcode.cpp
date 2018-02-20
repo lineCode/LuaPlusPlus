@@ -30,8 +30,7 @@
 /* Maximum number of registers in a Lua function (must fit in 8 bits) */
 #define MAXREGS		255
 
-
-#define hasjumps(e)	((e)->t != (e)->f)
+static bool hasjumps(const ExpressionDescription* e) { return e->patch1 != e->patch2; }
 
 
 /*
@@ -671,22 +670,22 @@ static int need_value (FuncState *fs, int list) {
 static void exp2reg (FuncState *fs, ExpressionDescription *e, int reg) {
   discharge2reg(fs, e, reg);
   if (e->k == VJMP)  /* expression itself is a test? */
-    luaK_concat(fs, &e->t, e->u.info);  /* put this jump in 't' list */
+    luaK_concat(fs, &e->patch1, e->u.info);  /* put this jump in 't' list */
   if (hasjumps(e)) {
     int final;  /* position after whole expression */
     int p_f = NO_JUMP;  /* position of an eventual LOAD false */
     int p_t = NO_JUMP;  /* position of an eventual LOAD true */
-    if (need_value(fs, e->t) || need_value(fs, e->f)) {
+    if (need_value(fs, e->patch1) || need_value(fs, e->patch2)) {
       int fj = (e->k == VJMP) ? NO_JUMP : luaK_jump(fs);
       p_f = code_loadbool(fs, reg, 0, 1);
       p_t = code_loadbool(fs, reg, 1, 0);
       luaK_patchtohere(fs, fj);
     }
     final = luaK_getlabel(fs);
-    patchlistaux(fs, e->f, final, reg, p_f);
-    patchlistaux(fs, e->t, final, reg, p_t);
+    patchlistaux(fs, e->patch2, final, reg, p_f);
+    patchlistaux(fs, e->patch1, final, reg, p_t);
   }
-  e->f = e->t = NO_JUMP;
+  e->patch2 = e->patch1 = NO_JUMP;
   e->u.info = reg;
   e->k = VNONRELOC;
 }
@@ -868,9 +867,9 @@ void luaK_goiftrue (FuncState *fs, ExpressionDescription *e) {
       break;
     }
   }
-  luaK_concat(fs, &e->f, pc);  /* insert new jump in false list */
-  luaK_patchtohere(fs, e->t);  /* true list jumps to here (to go through) */
-  e->t = NO_JUMP;
+  luaK_concat(fs, &e->patch2, pc);  /* insert new jump in false list */
+  luaK_patchtohere(fs, e->patch1);  /* true list jumps to here (to go through) */
+  e->patch1 = NO_JUMP;
 }
 
 
@@ -894,9 +893,9 @@ void luaK_goiffalse (FuncState *fs, ExpressionDescription *e) {
       break;
     }
   }
-  luaK_concat(fs, &e->t, pc);  /* insert new jump in 't' list */
-  luaK_patchtohere(fs, e->f);  /* false list jumps to here (to go through) */
-  e->f = NO_JUMP;
+  luaK_concat(fs, &e->patch1, pc);  /* insert new jump in 't' list */
+  luaK_patchtohere(fs, e->patch2);  /* false list jumps to here (to go through) */
+  e->patch2 = NO_JUMP;
 }
 
 
@@ -929,9 +928,9 @@ static void codenot (FuncState *fs, ExpressionDescription *e) {
     default: lua_assert(0);  /* cannot happen */
   }
   /* interchange true and false lists */
-  { int temp = e->f; e->f = e->t; e->t = temp; }
-  removevalues(fs, e->f);  /* values are useless when negated */
-  removevalues(fs, e->t);
+  std::swap(e->patch2, e->patch1);
+  removevalues(fs, e->patch2);  /* values are useless when negated */
+  removevalues(fs, e->patch1);
 }
 
 
@@ -1121,16 +1120,16 @@ void luaK_posfix (FuncState *fs, BinOpr op,
                   ExpressionDescription *e1, ExpressionDescription *e2, int line) {
   switch (op) {
     case OPR_AND: {
-      lua_assert(e1->t == NO_JUMP);  /* list closed by 'luK_infix' */
+      lua_assert(e1->patch1 == NO_JUMP);  /* list closed by 'luK_infix' */
       luaK_dischargevars(fs, e2);
-      luaK_concat(fs, &e2->f, e1->f);
+      luaK_concat(fs, &e2->patch2, e1->patch2);
       *e1 = *e2;
       break;
     }
     case OPR_OR: {
-      lua_assert(e1->f == NO_JUMP);  /* list closed by 'luK_infix' */
+      lua_assert(e1->patch2 == NO_JUMP);  /* list closed by 'luK_infix' */
       luaK_dischargevars(fs, e2);
-      luaK_concat(fs, &e2->t, e1->t);
+      luaK_concat(fs, &e2->patch1, e1->patch1);
       *e1 = *e2;
       break;
     }

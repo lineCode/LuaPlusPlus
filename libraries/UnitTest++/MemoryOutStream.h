@@ -50,7 +50,7 @@ public:
     MemoryOutStream& operator << (void const* p);
     MemoryOutStream& operator << (unsigned int s);
 
-    enum { GROW_CHUNK_SIZE = 32 };
+    enum : uint8_t { GROW_CHUNK_SIZE = 32 };
     int GetCapacity() const;
 
 private:

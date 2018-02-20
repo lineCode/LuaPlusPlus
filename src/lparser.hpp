@@ -20,7 +20,7 @@
 */
 
 /* kinds of variables/expressions */
-enum ExpType
+enum ExpType : uint8_t
 {
   VVOID,  /* when 'expdesc' describes the last expression a list,
             this kind means an empty list (so, no expression) */
@@ -63,15 +63,16 @@ struct ExpressionDescription
       uint8_t vt;  /* whether 't' is register (VLOCAL) or upvalue (VUPVAL) */
     } ind;
   } u;
-  int t;  /* patch list of 'exit when true' */
-  int f;  /* patch list of 'exit when false' */
+  int patch1;  /* patch list of 'exit when true' */
+  int patch2;  /* patch list of 'exit when false' */
 };
 
 
 /* description of active local variable */
-typedef struct Vardesc {
+struct Vardesc
+{
   short idx;  /* variable index in stack */
-} Vardesc;
+};
 
 
 /* description of pending goto statements and label statements */
@@ -112,11 +113,12 @@ struct BlockCnt;  /* defined in lparser.c */
 
 
 /* state needed to generate code for a given function */
-typedef struct FuncState {
-  Proto *f;  /* current function header */
-  struct FuncState *prev;  /* enclosing function */
-  struct LexState *ls;  /* lexical state */
-  struct BlockCnt *bl;  /* chain of current blocks */
+struct FuncState
+{
+  Proto* f;  /* current function header */
+  struct FuncState* prev;  /* enclosing function */
+  struct LexState* ls;  /* lexical state */
+  struct BlockCnt* bl;  /* chain of current blocks */
   int pc;  /* next position to code (equivalent to 'ncode') */
   int lasttarget;   /* 'label' of last 'jump label' */
   int jpc;  /* list of pending jumps to 'pc' */
@@ -127,7 +129,7 @@ typedef struct FuncState {
   uint8_t nactvar;  /* number of active local variables */
   uint8_t nups;  /* number of upvalues */
   uint8_t freereg;  /* first free register */
-} FuncState;
+};
 
 
 LUAI_FUNC LClosure *luaY_parser (lua_State *L, ZIO& z, Mbuffer& buff,

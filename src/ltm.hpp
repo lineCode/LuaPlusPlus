@@ -12,7 +12,8 @@
 * WARNING: if you change the order of this enumeration,
 * grep "ORDER TM" and "ORDER OP"
 */
-typedef enum {
+enum TMS : uint8_t
+{
   TM_INDEX,
   TM_NEWINDEX,
   TM_GC,
@@ -38,7 +39,7 @@ typedef enum {
   TM_CONCAT,
   TM_CALL,
   TM_N		/* number of elements in the enum */
-} TMS;
+};
 
 
 

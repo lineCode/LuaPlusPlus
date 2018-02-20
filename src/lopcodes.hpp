@@ -27,7 +27,7 @@
 ===========================================================================*/
 
 
-enum OpMode {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
+enum OpMode : uint8_t {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 
 
 /*
@@ -153,7 +153,7 @@ enum OpMode {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 ** grep "ORDER OP" if you change these enums
 */
 
-enum OpCode
+enum OpCode : uint8_t
 {
   /*----------------------------------------------------------------------
   name		args	description
@@ -261,7 +261,8 @@ enum OpCode
 ** bit 7: operator is a test (next instruction must be a jump)
 */
 
-enum OpArgMask {
+enum OpArgMask : uint8_t
+{
   OpArgN,  /* argument is not used */
   OpArgU,  /* argument is used */
   OpArgR,  /* argument is a register or a jump offset */
@@ -270,9 +271,9 @@ enum OpArgMask {
 
 LUAI_DDEC const uint8_t luaP_opmodes[NUM_OPCODES];
 
-#define getOpMode(m)	(cast(enum OpMode, luaP_opmodes[m] & 3))
-#define getBMode(m)	(cast(enum OpArgMask, (luaP_opmodes[m] >> 4) & 3))
-#define getCMode(m)	(cast(enum OpArgMask, (luaP_opmodes[m] >> 2) & 3))
+#define getOpMode(m)	(cast(OpMode, luaP_opmodes[m] & 3))
+#define getBMode(m)	(cast(OpArgMask, (luaP_opmodes[m] >> 4) & 3))
+#define getCMode(m)	(cast(OpArgMask, (luaP_opmodes[m] >> 2) & 3))
 #define testAMode(m)	(luaP_opmodes[m] & (1 << 6))
 #define testTMode(m)	(luaP_opmodes[m] & (1 << 7))
 

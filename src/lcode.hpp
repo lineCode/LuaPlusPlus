@@ -21,7 +21,8 @@
 /*
 ** grep "ORDER OPR" if you change these enums  (ORDER OP)
 */
-typedef enum BinOpr {
+enum BinOpr : uint8_t
+{
   OPR_ADD, OPR_SUB, OPR_MUL, OPR_MOD, OPR_POW,
   OPR_DIV,
   OPR_IDIV,
@@ -32,10 +33,17 @@ typedef enum BinOpr {
   OPR_NE, OPR_GT, OPR_GE,
   OPR_AND, OPR_OR,
   OPR_NOBINOPR
-} BinOpr;
+};
 
 
-typedef enum UnOpr { OPR_MINUS, OPR_BNOT, OPR_NOT, OPR_LEN, OPR_NOUNOPR } UnOpr;
+enum UnOpr : uint8_t
+{
+  OPR_MINUS,
+  OPR_BNOT,
+  OPR_NOT,
+  OPR_LEN,
+  OPR_NOUNOPR
+};
 
 
 /* get (pointer to) instruction of given 'expdesc' */
