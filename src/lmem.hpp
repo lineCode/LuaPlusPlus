@@ -89,7 +89,7 @@ public:
 
   static void luaM_growvector(lua_State* L, T*& block, size_t nelems, int32_t& size, int32_t limit, const char* e)
   {
-    if ((nelems)+1 > (size))
+    if ((nelems)+1 > static_cast<size_t>(size))
       block = luaM_growaux_(L, block, size, limit, e);
   }
 
@@ -100,7 +100,7 @@ public:
 
   static T* luaM_growaux_(lua_State* L, T* block, int32_t& size, int32_t limit, const char* what)
   {
-    constexpr size_t MINARRAYSIZE = 4;
+    constexpr int32_t MINARRAYSIZE = 4;
 
     int32_t newsize;
     if (size >= limit / 2)

@@ -708,7 +708,7 @@ void LGCFactory::luaC_free(lua_State* L, Table* table)
   LMem<Table>::luaM_free(L, table);
 }
 
-void LGCFactory::luaC_free(lua_State* L, lua_State* L1)
+void LGCFactory::luaC_free([[maybe_unused]] lua_State* L, lua_State* L1)
 {
   delete L1;
 }
@@ -1198,5 +1198,3 @@ void luaC_fullgc (lua_State *L, int isemergency) {
 }
 
 /* }====================================================== */
-
-

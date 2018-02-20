@@ -441,7 +441,7 @@ public:
   int lastlinedefined;  /* debug information  */
   TValue *k;  /* constants used by the function */
   Instruction *code;  /* opcodes */
-  struct Proto **p;  /* functions defined inside the function */
+  Proto **p;  /* functions defined inside the function */
   int *lineinfo;  /* map from opcodes to source lines (debug information) */
   LocVar *locvars;  /* information about local variables (debug information) */
   Upvaldesc *upvalues;  /* upvalue information */
@@ -507,11 +507,13 @@ public:
   UpVal *upvals[1];  /* list of upvalues */
 };
 
+[[maybe_unused]]
 static size_t sizeCClosure(int32_t upvalues)
 {
   return sizeof(CClosure) + (sizeof(TValue) * (upvalues - 1));
 }
 
+[[maybe_unused]]
 static size_t sizeLClosure(int32_t upvalues)
 {
   return sizeof(LClosure) + (sizeof(TValue*) * (upvalues - 1));
