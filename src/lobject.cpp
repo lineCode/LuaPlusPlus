@@ -31,7 +31,7 @@ LUAI_DDEF const TValue luaO_nilobject_ = {NILCONSTANT};
 
 TString::~TString()
 {
-  if (this->tt == LUA_TSHRSTR)
+  if (this->type == LuaType::Variant::ShortString)
     luaS_remove(LGCFactory::getActiveState(), this);  /* remove it from hash table */
 }
 
@@ -401,7 +401,8 @@ int luaO_utf8esc (char *buff, unsigned long x) {
 /*
 ** Convert a number object to a string
 */
-void luaO_tostring (lua_State *L, StkId obj) {
+void luaO_tostring (lua_State *L, StkId obj)
+{
   char buff[MAXNUMBER2STR];
   size_t len;
   lua_assert(ttisnumber(obj));

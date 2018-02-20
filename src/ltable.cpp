@@ -113,20 +113,21 @@ static int l_hashfloat (lua_Number n) {
 ** of its hash value)
 */
 static Node *mainposition (const Table *t, const TValue *key) {
-  switch (ttype(key)) {
-    case LUA_TNUMINT:
+  switch (ttype(key))
+  {
+    case LuaType::Variant::IntNumber:
       return hashint(t, ivalue(key));
-    case LUA_TNUMFLT:
+    case LuaType::Variant::FloatNumber:
       return hashmod(t, l_hashfloat(fltvalue(key)));
-    case LUA_TSHRSTR:
+    case LuaType::Variant::ShortString:
       return hashstr(t, tsvalue(key));
-    case LUA_TLNGSTR:
+    case LuaType::Variant::LongString:
       return hashpow2(t, luaS_hashlongstr(tsvalue(key)));
-    case LUA_TBOOLEAN:
+    case LuaType::Variant::Boolean:
       return hashboolean(t, bvalue(key));
-    case LUA_TLIGHTUSERDATA:
+    case LuaType::Variant::LightUserData:
       return hashpointer(t, pvalue(key));
-    case LUA_TLCF:
+    case LuaType::Variant::LightCFunction:
       return hashpointer(t, fvalue(key));
     default:
       lua_assert(!ttisdeadkey(key));
@@ -399,7 +400,7 @@ static void rehash (lua_State *L, Table *t, const TValue *ek) {
 
 Table *luaH_new (lua_State *L)
 {
-  Table* t = LGCFactory::luaC_newobj<Table>(L, LUA_TTABLE, sizeof(Table));
+  Table* t = LGCFactory::luaC_newobj<Table>(L, LuaType::Basic::Table, sizeof(Table));
   t->metatable = nullptr;
   t->flags = cast_byte(~0);
   t->array = nullptr;
@@ -508,7 +509,7 @@ const TValue *luaH_getint (Table *t, lua_Integer key) {
 */
 const TValue *luaH_getshortstr (Table *t, TString *key) {
   Node *n = hashstr(t, key);
-  lua_assert(key->tt == LUA_TSHRSTR);
+  lua_assert(key->type == LuaType::Variant::ShortString);
   for (;;) {  /* check whether 'key' is somewhere in the chain */
     const TValue *k = gkey(n);
     if (ttisshrstring(k) && eqshrstr(tsvalue(k), key))
@@ -543,7 +544,7 @@ static const TValue *getgeneric (Table *t, const TValue *key) {
 
 
 const TValue *luaH_getstr (Table *t, TString *key) {
-  if (key->tt == LUA_TSHRSTR)
+  if (key->type == LuaType::Variant::ShortString)
     return luaH_getshortstr(t, key);
   else {  /* for long strings, use generic case */
     TValue ko;
@@ -557,11 +558,13 @@ const TValue *luaH_getstr (Table *t, TString *key) {
 ** main search function
 */
 const TValue *luaH_get (Table *t, const TValue *key) {
-  switch (ttype(key)) {
-    case LUA_TSHRSTR: return luaH_getshortstr(t, tsvalue(key));
-    case LUA_TNUMINT: return luaH_getint(t, ivalue(key));
-    case LUA_TNIL: return luaO_nilobject;
-    case LUA_TNUMFLT: {
+  switch (ttype(key))
+  {
+    case LuaType::Variant::ShortString: return luaH_getshortstr(t, tsvalue(key));
+    case LuaType::Variant::IntNumber: return luaH_getint(t, ivalue(key));
+    case LuaType::Variant::Nil: return luaO_nilobject;
+    case LuaType::Variant::FloatNumber:
+    {
       lua_Integer k;
       if (luaV_tointeger(key, &k, 0)) /* index is int? */
         return luaH_getint(t, k);  /* use specialized version */

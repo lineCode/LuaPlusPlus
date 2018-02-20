@@ -22,6 +22,7 @@
 #include <ltable.hpp>
 #include <ltm.hpp>
 #include <lutils.hpp>
+#include <lauxlib.hpp>
 
 
 thread_local lua_State* LGCFactory::active_state = nullptr;
@@ -122,7 +123,8 @@ static void reallymarkobject (global_State *g, GCObject *o);
 ** associated nil value is enough to signal that the entry is logically
 ** empty.
 */
-static void removeentry (Node *n) {
+static void removeentry (Node *n)
+{
   lua_assert(ttisnil(gval(n)));
   if (valiswhite(gkey(n)))
     setdeadvalue(wgkey(n));  /* unused and unmarked key; remove it */
@@ -216,53 +218,66 @@ void luaC_fix (lua_State *L, GCObject *o) {
 ** to appropriate list to be visited (and turned black) later. (Open
 ** upvalues are already linked in 'headuv' list.)
 */
-static void reallymarkobject (global_State *g, GCObject *o) {
+static void reallymarkobject (global_State *g, GCObject *o)
+{
  reentry:
   white2gray(o);
-  switch (o->tt) {
-    case LUA_TSHRSTR: {
+
+  switch (o->type.asVariantStrict())
+  {
+    case LuaType::Variant::ShortString:
+    {
       gray2black(o);
       g->GCmemtrav += sizelstring(gco2ts(o)->shrlen);
       break;
     }
-    case LUA_TLNGSTR: {
+    case LuaType::Variant::LongString:
+    {
       gray2black(o);
       g->GCmemtrav += sizelstring(gco2ts(o)->u.lnglen);
       break;
     }
-    case LUA_TUSERDATA: {
+    case LuaType::Variant::UserData:
+    {
       TValue uvalue;
       markobjectN(g, gco2u(o)->metatable);  /* mark its metatable */
       gray2black(o);
       g->GCmemtrav += sizeudata(gco2u(o));
       getuservalue(g->mainthread, gco2u(o), &uvalue);
-      if (valiswhite(&uvalue)) {  /* markvalue(g, &uvalue); */
+      if (valiswhite(&uvalue))
+      { /* markvalue(g, &uvalue); */
         o = gcvalue(&uvalue);
         goto reentry;
       }
       break;
     }
-    case LUA_TLCL: {
+    case LuaType::Variant::LuaFunctionClosure:
+    {
       linkgclist(gco2lcl(o), g->gray);
       break;
     }
-    case LUA_TCCL: {
+    case LuaType::Variant::CFunctionClosure:
+    {
       linkgclist(gco2ccl(o), g->gray);
       break;
     }
-    case LUA_TTABLE: {
+    case LuaType::Variant::Table:
+    {
       linkgclist(gco2t(o), g->gray);
       break;
     }
-    case LUA_TTHREAD: {
+    case LuaType::Variant::Thread:
+    {
       linkgclist(gco2th(o), g->gray);
       break;
     }
-    case LUA_TPROTO: {
+    case LuaType::Variant::FunctionPrototype:
+    {
       linkgclist(gco2p(o), g->gray);
       break;
     }
-    default: lua_assert(0); break;
+    default:
+      luaL_error(g->mainthread, "unknown type: %i.", LuaType::DataType(o->type.asVariant()));
   }
 }
 
@@ -270,10 +285,10 @@ static void reallymarkobject (global_State *g, GCObject *o) {
 /*
 ** mark metamethods for basic types
 */
-static void markmt (global_State *g) {
-  int i;
-  for (i=0; i < LUA_NUMTAGS; i++)
-    markobjectN(g, g->mt[i]);
+static void markmt (global_State *g)
+{
+  for (auto& mt: g->mt)
+    markobjectN(g, mt);
 }
 
 
@@ -545,26 +560,31 @@ static void propagatemark (global_State *g) {
   GCObject *o = g->gray;
   lua_assert(isgray(o));
   gray2black(o);
-  switch (o->tt) {
-    case LUA_TTABLE: {
+  switch (o->type.asVariantStrict())
+  {
+    case LuaType::Variant::Table:
+    {
       Table *h = gco2t(o);
       g->gray = h->gclist;  /* remove from 'gray' list */
       size = traversetable(g, h);
       break;
     }
-    case LUA_TLCL: {
+    case LuaType::Variant::LuaFunctionClosure:
+    {
       LClosure *cl = gco2lcl(o);
       g->gray = cl->gclist;  /* remove from 'gray' list */
       size = traverseLclosure(g, cl);
       break;
     }
-    case LUA_TCCL: {
+    case LuaType::Variant::CFunctionClosure:
+    {
       CClosure *cl = gco2ccl(o);
       g->gray = cl->gclist;  /* remove from 'gray' list */
       size = traverseCclosure(g, cl);
       break;
     }
-    case LUA_TTHREAD: {
+    case LuaType::Variant::Thread:
+    {
       lua_State *th = gco2th(o);
       g->gray = th->gclist;  /* remove from 'gray' list */
       linkgclist(th, g->grayagain);  /* insert into 'grayagain' list */
@@ -572,13 +592,15 @@ static void propagatemark (global_State *g) {
       size = traversethread(g, th);
       break;
     }
-    case LUA_TPROTO: {
+    case LuaType::Variant::FunctionPrototype:
+    {
       Proto *p = gco2p(o);
       g->gray = p->gclist;  /* remove from 'gray' list */
       size = traverseproto(g, p);
       break;
     }
-    default: lua_assert(0); return;
+    default:
+      luaL_error(g->mainthread, "unknown type: %i.", LuaType::DataType(o->type.asVariant()));
   }
   g->GCmemtrav += size;
 }
@@ -668,16 +690,16 @@ void luaC_upvdeccount (lua_State *L, UpVal *uv)
 
 static void freeobj (lua_State* L, GCObject* o)
 {
-  switch (o->tt)
+  switch (o->type.asVariantStrict())
   {
-    case LUA_TPROTO: LGCFactory::luaC_freeobj(L, gco2p(o)); break;
-    case LUA_TLCL: LGCFactory::luaC_freeobj(L, gco2lcl(o)); break;
-    case LUA_TCCL: LGCFactory::luaC_freeobj(L, gco2ccl(o)); break;
-    case LUA_TTABLE: LGCFactory::luaC_freeobj(L, gco2t(o)); break;
-    case LUA_TTHREAD: LGCFactory::luaC_freeobj(L, gco2th(o)); break;
-    case LUA_TUSERDATA: LGCFactory::luaC_freeobj(L, gco2u(o)); break;
-    case LUA_TSHRSTR: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
-    case LUA_TLNGSTR: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
+    case LuaType::Variant::FunctionPrototype: LGCFactory::luaC_freeobj(L, gco2p(o)); break;
+    case LuaType::Variant::LuaFunctionClosure: LGCFactory::luaC_freeobj(L, gco2lcl(o)); break;
+    case LuaType::Variant::CFunctionClosure: LGCFactory::luaC_freeobj(L, gco2ccl(o)); break;
+    case LuaType::Variant::Table: LGCFactory::luaC_freeobj(L, gco2t(o)); break;
+    case LuaType::Variant::Thread: LGCFactory::luaC_freeobj(L, gco2th(o)); break;
+    case LuaType::Variant::UserData: LGCFactory::luaC_freeobj(L, gco2u(o)); break;
+    case LuaType::Variant::ShortString: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
+    case LuaType::Variant::LongString: LGCFactory::luaC_freeobj(L, gco2ts(o)); break;
     default: lua_assert(false);
   }
 }
@@ -722,16 +744,16 @@ void LGCFactory::luaC_free(lua_State* L, Udata* udata)
 
 void LGCFactory::luaC_free(lua_State* L, TString* string)
 {
-  switch (string->tt)
+  switch (string->type.asVariantStrict())
   {
-    case LUA_TSHRSTR:
+    case LuaType::Variant::ShortString:
     {
       size_t size = sizelstring(string->shrlen);
       string->~TString();
       LMem<TString>::luaM_freemem(L, string, size);
       break;
     }
-    case LUA_TLNGSTR:
+    case LuaType::Variant::LongString:
     {
       size_t size = sizelstring(string->u.lnglen);
       string->~TString();

@@ -18,6 +18,7 @@
 
 #include <lauxlib.hpp>
 #include <lualib.hpp>
+#include <llimits.hpp>
 
 
 /*
@@ -35,7 +36,7 @@
 
 static int checkfield (lua_State *L, const char *key, int n) {
   lua_pushstring(L, key);
-  return (lua_rawget(L, -n) != LUA_TNIL);
+  return (lua_rawget(L, -n) != LuaType::Basic::Nil);
 }
 
 
@@ -44,7 +45,7 @@ static int checkfield (lua_State *L, const char *key, int n) {
 ** has a metatable with the required metamethods)
 */
 static void checktab (lua_State *L, int arg, int what) {
-  if (lua_type(L, arg) != LUA_TTABLE) {  /* is it not a table? */
+  if (lua_type(L, arg) != LuaType::Basic::Table) {  /* is it not a table? */
     int n = 1;  /* number of elements to pop */
     if (lua_getmetatable(L, arg) &&  /* must have metatable */
         (!(what & TAB_R) || checkfield(L, "__index", ++n)) &&
@@ -53,7 +54,7 @@ static void checktab (lua_State *L, int arg, int what) {
       lua_pop(L, n);  /* pop metatable and tested metamethods */
     }
     else
-      luaL_checktype(L, arg, LUA_TTABLE);  /* force an error */
+      luaL_checktype(L, arg, LuaType::Basic::Table);  /* force an error */
   }
 }
 
@@ -75,9 +76,8 @@ static int tinsert (lua_State *L) {
       }
       break;
     }
-    default: {
-      return luaL_error(L, "wrong number of arguments to 'insert'");
-    }
+    default:
+      luaL_error(L, "wrong number of arguments to 'insert'");
   }
   lua_seti(L, 1, pos);  /* t[pos] = v */
   return 0;
@@ -192,7 +192,7 @@ static int unpack (lua_State *L) {
   if (i > e) return 0;  /* empty range */
   n = (lua_Unsigned)e - i;  /* number of elements minus 1 (avoid overflows) */
   if (n >= (uint32_t)INT_MAX  || !lua_checkstack(L, (int)(++n)))
-    return luaL_error(L, "too many results to unpack");
+    luaL_error(L, "too many results to unpack");
   for (; i < e; i++) {  /* push arg[i..e - 1] (to avoid overflows) */
     lua_geti(L, 1, i);
   }
@@ -324,7 +324,8 @@ static IdxT partition (lua_State *L, IdxT lo, IdxT up) {
 ** Choose an element in the middle (2nd-3th quarters) of [lo,up]
 ** "randomized" by 'rnd'
 */
-static IdxT choosePivot (IdxT lo, IdxT up, uint32_t rnd) {
+static IdxT choosePivot (IdxT lo, IdxT up, uint32_t rnd)
+{
   IdxT r4 = (up - lo) / 4;  /* range/4 */
   IdxT p = rnd % (r4 * 2) + (lo + r4);
   lua_assert(lo + r4 <= p && p <= up - r4);
@@ -394,7 +395,7 @@ static int sort (lua_State *L) {
   if (n > 1) {  /* non-trivial interval? */
     luaL_argcheck(L, n < INT_MAX, 1, "array too big");
     if (!lua_isnoneornil(L, 2))  /* is there a 2nd argument? */
-      luaL_checktype(L, 2, LUA_TFUNCTION);  /* must be a function */
+      luaL_checktype(L, 2, LuaType::Basic::Function);  /* must be a function */
     lua_settop(L, 2);  /* make sure there are two arguments */
     auxsort(L, 1, (IdxT)n, 0);
   }

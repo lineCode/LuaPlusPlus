@@ -19,8 +19,7 @@
 #include <lua.hpp>
 #include <lauxlib.hpp>
 #include <lualib.hpp>
-
-
+#include <llimits.hpp>
 
 
 /*
@@ -532,7 +531,8 @@ static int g_read (lua_State *L, FILE *f, int first) {
     luaL_checkstack(L, nargs+LUA_MINSTACK, "too many arguments");
     success = 1;
     for (n = first; nargs-- && success; n++) {
-      if (lua_type(L, n) == LUA_TNUMBER) {
+      if (lua_type(L, n) == LuaType::Basic::Number)
+      {
         size_t l = (size_t)luaL_checkinteger(L, n);
         success = (l == 0) ? test_eof(L, f) : read_chars(L, f, l);
       }
@@ -584,7 +584,7 @@ static int io_readline (lua_State *L) {
   int i;
   int n = (int)lua_tointeger(L, lua_upvalueindex(2));
   if (isclosed(p))  /* file is already closed? */
-    return luaL_error(L, "file is already closed");
+    luaL_error(L, "file is already closed");
   lua_settop(L , 1);
   luaL_checkstack(L, n, "too many arguments");
   for (i = 1; i <= n; i++)  /* push arguments to 'g_read' */
@@ -596,7 +596,7 @@ static int io_readline (lua_State *L) {
   else {  /* first result is nil: EOF or error */
     if (n > 1) {  /* is there error information? */
       /* 2nd result is error message */
-      return luaL_error(L, "%s", lua_tostring(L, -n + 1));
+      luaL_error(L, "%s", lua_tostring(L, -n + 1));
     }
     if (lua_toboolean(L, lua_upvalueindex(3))) {  /* generator created file? */
       lua_settop(L, 0);
@@ -614,7 +614,8 @@ static int g_write (lua_State *L, FILE *f, int arg) {
   int nargs = lua_gettop(L) - arg;
   int status = 1;
   for (; nargs--; arg++) {
-    if (lua_type(L, arg) == LUA_TNUMBER) {
+    if (lua_type(L, arg) == LuaType::Basic::Number)
+    {
       /* optimization: could be done exactly as for strings */
       int len = lua_isinteger(L, arg)
                 ? fprintf(f, LUA_INTEGER_FMT,

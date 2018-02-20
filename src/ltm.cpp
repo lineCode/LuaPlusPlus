@@ -22,16 +22,6 @@
 #include <lvm.hpp>
 
 
-static const char udatatypename[] = "userdata";
-
-LUAI_DDEF const char *const luaT_typenames_[LUA_TOTALTAGS] = {
-  "no value",
-  "nil", "boolean", udatatypename, "number",
-  "string", "table", "function", udatatypename, "thread",
-  "proto" /* this last case is used for tests only */
-};
-
-
 void luaT_init (lua_State *L) {
   static const char *const luaT_eventname[] = {  /* ORDER TM */
     "__index", "__newindex",
@@ -67,15 +57,16 @@ const TValue *luaT_gettm (Table *events, TMS event, TString *ename) {
 
 const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o, TMS event) {
   Table *mt;
-  switch (ttnov(o)) {
-    case LUA_TTABLE:
+  switch (ttnov(o))
+  {
+    case LuaType::Basic::Table:
       mt = hvalue(o)->metatable;
       break;
-    case LUA_TUSERDATA:
+    case LuaType::Basic::UserData:
       mt = uvalue(o)->metatable;
       break;
     default:
-      mt = L->globalState->mt[ttnov(o)];
+      mt = L->globalState->mt[LuaType::DataType(ttnov(o))];
   }
   return (mt ? luaH_getshortstr(mt, L->globalState->tmname[event]) : luaO_nilobject);
 }
@@ -93,7 +84,7 @@ const char *luaT_objtypename (lua_State *L, const TValue *o) {
     if (ttisstring(name))  /* is '__name' a string? */
       return getstr(tsvalue(name));  /* use it as type name */
   }
-  return ttypename(ttnov(o));  /* else use standard type name */
+  return LuaType::toString(ttnov(o)); /* else use standard type name */
 }
 
 

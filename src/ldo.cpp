@@ -387,13 +387,17 @@ int luaD_poscall (lua_State *L, CallInfo *ci, StkId firstResult, int nres) {
 int luaD_precall (lua_State *L, StkId func, int nresults) {
   lua_CFunction f;
   CallInfo *ci;
-  switch (ttype(func)) {
-    case LUA_TCCL:  /* C closure */
+  switch (ttype(func))
+  {
+    case LuaType::Variant::CFunctionClosure:
+    {
       f = clCvalue(func)->f;
       goto Cfunc;
-    case LUA_TLCF:  /* light C function */
+    }
+    case LuaType::Variant::LightCFunction:
       f = fvalue(func);
-     Cfunc: {
+     Cfunc:
+    {
       int n;  /* number of returns */
       checkstackp(L, LUA_MINSTACK, func);  /* ensure minimum stack size */
       ci = next_ci(L);  /* now 'enter' new function */
@@ -411,7 +415,8 @@ int luaD_precall (lua_State *L, StkId func, int nresults) {
       luaD_poscall(L, ci, L->top - n, n);
       return 1;
     }
-    case LUA_TLCL: {  /* Lua function: prepare its call */
+    case LuaType::Variant::LuaFunctionClosure:
+    {  /* Lua function: prepare its call */
       StkId base;
       Proto *p = clLvalue(func)->p;
       int n = cast_int(L->top - func) - 1;  /* number of real arguments */

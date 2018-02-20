@@ -180,7 +180,7 @@ static int msghandler (lua_State *L) {
   const char *msg = lua_tostring(L, 1);
   if (msg == nullptr) {  /* is error object not a string? */
     if (luaL_callmeta(L, 1, "__tostring") &&  /* does it have a metamethod */
-        lua_type(L, -1) == LUA_TSTRING)  /* that produces a string? */
+        lua_type(L, -1) == LuaType::Basic::String)  /* that produces a string? */
       return 1;  /* that is the message */
     else
       msg = lua_pushfstring(L, "(error object is a %s value)",
@@ -423,7 +423,7 @@ static void doREPL (lua_State *L) {
 */
 static int pushargs (lua_State *L) {
   int i, n;
-  if (lua_getglobal(L, "arg") != LUA_TTABLE)
+  if (lua_getglobal(L, "arg") != LuaType::Basic::Table)
     luaL_error(L, "'arg' is not a table");
   n = (int)luaL_len(L, -1);
   luaL_checkstack(L, n + 3, "too many arguments to script");

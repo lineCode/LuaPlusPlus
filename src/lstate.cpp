@@ -179,7 +179,7 @@ lua_State::lua_State()
 
   global_State* g = this->globalState;
   this->next = nullptr;
-  this->tt = LUA_TTHREAD;
+  this->type = LuaType::Basic::Thread;
   g->currentwhite = bitmask(WHITE0BIT);
   this->marked = luaC_white(g);
   preinit_thread(this, g);
@@ -206,7 +206,7 @@ lua_State::lua_State(lua_State* L)
   luaM_addGCDebt(L, sizeof(lua_State), 0);
 
   L1->marked = luaC_white(g);
-  L1->tt = LUA_TTHREAD;
+  L1->type = LuaType::Basic::Thread;
   /* link it on list 'allgc' */
   L1->next = g->allgc;
   g->allgc = obj2gco(L1);

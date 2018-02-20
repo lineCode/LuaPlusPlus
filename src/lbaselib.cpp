@@ -31,7 +31,7 @@ static int luaB_print (lua_State *L) {
     lua_call(L, 1, 1);
     s = lua_tolstring(L, -1, &l);  /* get result */
     if (s == nullptr)
-      return luaL_error(L, "'tostring' must return a string to 'print'");
+      luaL_error(L, "'tostring' must return a string to 'print'");
     if (i>1) lua_writestring("\t", 1);
     lua_writestring(s, l);
     lua_pop(L, 1);  /* pop result */
@@ -67,7 +67,7 @@ static const char *b_str2int (const char *s, int base, lua_Integer *pn) {
 static int luaB_tonumber (lua_State *L) {
   if (lua_isnoneornil(L, 2)) {  /* standard conversion? */
     luaL_checkany(L, 1);
-    if (lua_type(L, 1) == LUA_TNUMBER) {  /* already a number? */
+    if (lua_type(L, 1) == LuaType::Basic::Number) {  /* already a number? */
       lua_settop(L, 1);  /* yes; return it */
       return 1;
     }
@@ -84,7 +84,7 @@ static int luaB_tonumber (lua_State *L) {
     const char *s;
     lua_Integer n = 0;  /* to avoid warnings */
     lua_Integer base = luaL_checkinteger(L, 2);
-    luaL_checktype(L, 1, LUA_TSTRING);  /* no numbers as strings */
+    luaL_checktype(L, 1, LuaType::Basic::String);  /* no numbers as strings */
     s = lua_tolstring(L, 1, &l);
     luaL_argcheck(L, 2 <= base && base <= 36, 2, "base out of range");
     if (b_str2int(s, (int)base, &n) == s + l) {
@@ -96,16 +96,17 @@ static int luaB_tonumber (lua_State *L) {
   return 1;
 }
 
-
-static int luaB_error (lua_State *L) {
+[[noreturn]]
+static int luaB_error (lua_State *L)
+{
   int level = (int)luaL_optinteger(L, 2, 1);
   lua_settop(L, 1);
-  if (lua_type(L, 1) == LUA_TSTRING && level > 0) {
+  if (lua_type(L, 1) == LuaType::Basic::String && level > 0) {
     luaL_where(L, level);   /* add extra information */
     lua_pushvalue(L, 1);
     lua_concat(L, 2);
   }
-  return lua_error(L);
+  lua_error(L);
 }
 
 
@@ -121,12 +122,12 @@ static int luaB_getmetatable (lua_State *L) {
 
 
 static int luaB_setmetatable (lua_State *L) {
-  int t = lua_type(L, 2);
-  luaL_checktype(L, 1, LUA_TTABLE);
-  luaL_argcheck(L, t == LUA_TNIL || t == LUA_TTABLE, 2,
+  LuaType t = lua_type(L, 2);
+  luaL_checktype(L, 1, LuaType::Basic::Table);
+  luaL_argcheck(L, t == LuaType::Basic::Nil || t == LuaType::Basic::Table, 2,
                     "nil or table expected");
-  if (luaL_getmetafield(L, 1, "__metatable") != LUA_TNIL)
-    return luaL_error(L, "cannot change a protected metatable");
+  if (luaL_getmetafield(L, 1, "__metatable") != LuaType::Basic::Nil)
+    luaL_error(L, "cannot change a protected metatable");
   lua_settop(L, 2);
   lua_setmetatable(L, 1);
   return 1;
@@ -142,8 +143,8 @@ static int luaB_rawequal (lua_State *L) {
 
 
 static int luaB_rawlen (lua_State *L) {
-  int t = lua_type(L, 1);
-  luaL_argcheck(L, t == LUA_TTABLE || t == LUA_TSTRING, 1,
+  LuaType t = lua_type(L, 1);
+  luaL_argcheck(L, t == LuaType::Basic::Table || t == LuaType::Basic::String, 1,
                    "table or string expected");
   lua_pushinteger(L, lua_rawlen(L, 1));
   return 1;
@@ -151,7 +152,7 @@ static int luaB_rawlen (lua_State *L) {
 
 
 static int luaB_rawget (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LuaType::Basic::Table);
   luaL_checkany(L, 2);
   lua_settop(L, 2);
   lua_rawget(L, 1);
@@ -159,7 +160,7 @@ static int luaB_rawget (lua_State *L) {
 }
 
 static int luaB_rawset (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LuaType::Basic::Table);
   luaL_checkany(L, 2);
   luaL_checkany(L, 3);
   lua_settop(L, 3);
@@ -196,9 +197,10 @@ static int luaB_collectgarbage (lua_State *L) {
 }
 
 
-static int luaB_type (lua_State *L) {
-  int t = lua_type(L, 1);
-  luaL_argcheck(L, t != LUA_TNONE, 1, "value expected");
+static int luaB_type (lua_State *L)
+{
+  LuaType t = lua_type(L, 1);
+  luaL_argcheck(L, t != LuaType::Variant::None, 1, "value expected");
   lua_pushstring(L, lua_typename(L, t));
   return 1;
 }
@@ -207,7 +209,7 @@ static int luaB_type (lua_State *L) {
 static int pairsmeta (lua_State *L, const char *method, int iszero,
                       lua_CFunction iter) {
   luaL_checkany(L, 1);
-  if (luaL_getmetafield(L, 1, method) == LUA_TNIL) {  /* no metamethod? */
+  if (luaL_getmetafield(L, 1, method) == LuaType::Basic::Nil) {  /* no metamethod? */
     lua_pushcfunction(L, iter);  /* will return generator, */
     lua_pushvalue(L, 1);  /* state, */
     if (iszero) lua_pushinteger(L, 0);  /* and initial value */
@@ -222,7 +224,7 @@ static int pairsmeta (lua_State *L, const char *method, int iszero,
 
 
 static int luaB_next (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TTABLE);
+  luaL_checktype(L, 1, LuaType::Basic::Table);
   lua_settop(L, 2);  /* create a 2nd argument if there isn't one */
   if (lua_next(L, 1))
     return 2;
@@ -244,7 +246,7 @@ static int luaB_pairs (lua_State *L) {
 static int ipairsaux (lua_State *L) {
   lua_Integer i = luaL_checkinteger(L, 2) + 1;
   lua_pushinteger(L, i);
-  return (lua_geti(L, 1, i) == LUA_TNIL) ? 1 : 2;
+  return (lua_geti(L, 1, i) == LuaType::Basic::Nil) ? 1 : 2;
 }
 
 
@@ -337,7 +339,7 @@ static int luaB_load (lua_State *L) {
   }
   else {  /* loading from a reader function */
     const char *chunkname = luaL_optstring(L, 2, "=(load)");
-    luaL_checktype(L, 1, LUA_TFUNCTION);
+    luaL_checktype(L, 1, LuaType::Basic::Function);
     lua_settop(L, RESERVEDSLOT);  /* create reserved slot */
     status = lua_load(L, generic_reader, nullptr, chunkname, mode);
   }
@@ -353,32 +355,33 @@ static int dofilecont (lua_State *L, int d1, lua_KContext d2) {
 }
 
 
-static int luaB_dofile (lua_State *L) {
+static int luaB_dofile (lua_State *L)
+{
   const char *fname = luaL_optstring(L, 1, NULL);
   lua_settop(L, 1);
   if (luaL_loadfile(L, fname) != LUA_OK)
-    return lua_error(L);
+    lua_error(L);
   lua_callk(L, 0, LUA_MULTRET, 0, dofilecont);
   return dofilecont(L, 0, 0);
 }
 
 
-static int luaB_assert (lua_State *L) {
+static int luaB_assert (lua_State *L)
+{
   if (lua_toboolean(L, 1))  /* condition is true? */
     return lua_gettop(L);  /* return all arguments */
-  else {  /* error */
-    luaL_checkany(L, 1);  /* there must be a condition */
-    lua_remove(L, 1);  /* remove it */
-    lua_pushliteral(L, "assertion failed!");  /* default message */
-    lua_settop(L, 1);  /* leave only message (default if no other one) */
-    return luaB_error(L);  /* call 'error' */
-  }
+  // error
+  luaL_checkany(L, 1);  /* there must be a condition */
+  lua_remove(L, 1);  /* remove it */
+  lua_pushliteral(L, "assertion failed!");  /* default message */
+  lua_settop(L, 1);  /* leave only message (default if no other one) */
+  luaB_error(L);  /* call 'error' */
 }
 
 
 static int luaB_select (lua_State *L) {
   int n = lua_gettop(L);
-  if (lua_type(L, 1) == LUA_TSTRING && *lua_tostring(L, 1) == '#') {
+  if (lua_type(L, 1) == LuaType::Basic::String && *lua_tostring(L, 1) == '#') {
     lua_pushinteger(L, n-1);
     return 1;
   }
@@ -428,7 +431,7 @@ static int luaB_pcall (lua_State *L) {
 static int luaB_xpcall (lua_State *L) {
   int status;
   int n = lua_gettop(L);
-  luaL_checktype(L, 2, LUA_TFUNCTION);  /* check error function */
+  luaL_checktype(L, 2, LuaType::Basic::Function);  /* check error function */
   lua_pushboolean(L, 1);  /* first result */
   lua_pushvalue(L, 1);  /* function */
   lua_rotate(L, 3, 2);  /* move them below function's arguments */
@@ -444,7 +447,8 @@ static int luaB_tostring (lua_State *L) {
 }
 
 
-static const luaL_Reg base_funcs[] = {
+static const luaL_Reg base_funcs[] =
+{
   {"assert", luaB_assert},
   {"collectgarbage", luaB_collectgarbage},
   {"dofile", luaB_dofile},

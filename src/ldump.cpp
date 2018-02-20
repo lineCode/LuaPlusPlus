@@ -95,31 +95,33 @@ static void DumpCode (const Proto *f, DumpState *D) {
 
 static void DumpFunction(const Proto *f, TString *psource, DumpState *D);
 
-static void DumpConstants (const Proto *f, DumpState *D) {
-  int i;
+static void DumpConstants (const Proto *f, DumpState *D)
+{
   int n = f->sizek;
   DumpInt(n, D);
-  for (i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++)
+  {
     const TValue *o = &f->k[i];
-    DumpByte(ttype(o), D);
-    switch (ttype(o)) {
-    case LUA_TNIL:
-      break;
-    case LUA_TBOOLEAN:
-      DumpByte(bvalue(o), D);
-      break;
-    case LUA_TNUMFLT:
-      DumpNumber(fltvalue(o), D);
-      break;
-    case LUA_TNUMINT:
-      DumpInteger(ivalue(o), D);
-      break;
-    case LUA_TSHRSTR:
-    case LUA_TLNGSTR:
-      DumpString(tsvalue(o), D);
-      break;
-    default:
-      lua_assert(0);
+    DumpByte(LuaType::DataType(ttype(o)), D);
+    switch (ttype(o))
+    {
+      case LuaType::Variant::Nil:
+        break;
+      case LuaType::Variant::Boolean:
+        DumpByte(bvalue(o), D);
+        break;
+      case LuaType::Variant::FloatNumber:
+        DumpNumber(fltvalue(o), D);
+        break;
+      case LuaType::Variant::IntNumber:
+        DumpInteger(ivalue(o), D);
+        break;
+      case LuaType::Variant::ShortString:
+      case LuaType::Variant::LongString:
+        DumpString(tsvalue(o), D);
+        break;
+      default:
+        lua_assert(false);
     }
   }
 }

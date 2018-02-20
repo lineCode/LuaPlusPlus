@@ -135,15 +135,15 @@ public:
 
   // Create a new collectable object (with given type and size) and link it to 'allgc' list.
   template<class T>
-  static T* luaC_newobj(lua_State* L, int tt, size_t sz)
+  static T* luaC_newobj(lua_State* L, LuaType type, size_t sz)
   {
     static_assert(std::is_base_of<GCObject, T>::value);
     static_assert(std::is_same<decltype(LGCFactory::luaC_free(std::declval<lua_State*>(), std::declval<T*>())), void>::value);
 
-    T* object = static_cast<T*>(LMem<void>::luaM_newobject(L, novariant(tt), sz));
+    T* object = static_cast<T*>(LMem<void>::luaM_newobject(L, LuaType::DataType(novariant(type)), sz));
     global_State* g = L->globalState;
     object->marked = luaC_white(g);
-    object->tt = tt;
+    object->type = type;
     object->next = g->allgc;
     g->allgc = object;
     return object;

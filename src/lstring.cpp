@@ -37,9 +37,10 @@
 /*
 ** equality for long strings
 */
-int luaS_eqlngstr (TString *a, TString *b) {
+int luaS_eqlngstr (TString *a, TString *b)
+{
   size_t len = a->u.lnglen;
-  lua_assert(a->tt == LUA_TLNGSTR && b->tt == LUA_TLNGSTR);
+  lua_assert(a->type == LuaType::Variant::LongString && b->type == LuaType::Variant::LongString);
   return (a == b) ||  /* same instance or... */
     ((len == b->u.lnglen) &&  /* equal length and ... */
      (memcmp(getstr(a), getstr(b), len) == 0));  /* equal contents */
@@ -56,7 +57,7 @@ uint32_t luaS_hash (const char *str, size_t l, uint32_t seed) {
 
 
 uint32_t luaS_hashlongstr (TString *ts) {
-  lua_assert(ts->tt == LUA_TLNGSTR);
+  lua_assert(ts->type == LuaType::Variant::LongString);
   if (ts->extra == 0) {  /* no hash? */
     ts->hash = luaS_hash(getstr(ts), ts->u.lnglen, ts->hash);
     ts->extra = 1;  /* now it has its hash */
@@ -131,7 +132,8 @@ void luaS_init (lua_State *L) {
 /*
 ** creates a new string object
 */
-static TString *createstrobj (lua_State *L, size_t l, int tag, uint32_t h) {
+static TString *createstrobj (lua_State *L, size_t l, LuaType tag, uint32_t h)
+{
   TString* result = LGCFactory::luaC_newobj<TString>(L, tag, sizelstring(l) /* total size of TString object */ );
   result->hash = h;
   result->extra = 0;
@@ -140,8 +142,9 @@ static TString *createstrobj (lua_State *L, size_t l, int tag, uint32_t h) {
 }
 
 
-TString *luaS_createlngstrobj (lua_State *L, size_t l) {
-  TString *ts = createstrobj(L, l, LUA_TLNGSTR, L->globalState->seed);
+TString *luaS_createlngstrobj (lua_State *L, size_t l)
+{
+  TString *ts = createstrobj(L, l, LuaType::Variant::LongString, L->globalState->seed);
   ts->u.lnglen = l;
   return ts;
 }
@@ -179,7 +182,7 @@ static TString *internshrstr (lua_State *L, const char *str, size_t l) {
     luaS_resize(L, g->strt.size * 2);
     list = &g->strt.hash[lmod(h, g->strt.size)];  /* recompute with new size */
   }
-  ts = createstrobj(L, l, LUA_TSHRSTR, h);
+  ts = createstrobj(L, l, LuaType::Variant::ShortString, h);
   memcpy(getstr(ts), str, l * sizeof(char));
   ts->shrlen = cast_byte(l);
   ts->u.hnext = *list;
@@ -233,7 +236,7 @@ Udata* luaS_newudata (lua_State *L, size_t s)
 {
   if (s > MAX_SIZE - sizeof(Udata))
     luaM_toobig(L);
-  Udata* u = LGCFactory::luaC_newobj<Udata>(L, LUA_TUSERDATA, sizeludata(s));
+  Udata* u = LGCFactory::luaC_newobj<Udata>(L, LuaType::Variant::UserData, sizeludata(s));
   u->len = s;
   u->metatable = nullptr;
   setuservalue(L, u, luaO_nilobject);

@@ -70,24 +70,27 @@ static int luaB_coresume (lua_State *L) {
 }
 
 
-static int luaB_auxwrap (lua_State *L) {
+static int luaB_auxwrap (lua_State *L)
+{
   lua_State *co = lua_tothread(L, lua_upvalueindex(1));
   int r = auxresume(L, co, lua_gettop(L));
   if (r < 0) {
-    if (lua_type(L, -1) == LUA_TSTRING) {  /* error object is a string? */
+    if (lua_type(L, -1) == LuaType::Basic::String)
+    { /* error object is a string? */
       luaL_where(L, 1);  /* add extra info */
       lua_insert(L, -2);
       lua_concat(L, 2);
     }
-    return lua_error(L);  /* propagate error */
+    lua_error(L);  /* propagate error */
   }
   return r;
 }
 
 
-static int luaB_cocreate (lua_State *L) {
+static int luaB_cocreate (lua_State *L)
+{
   lua_State *NL;
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LuaType::Basic::Function);
   NL = lua_newthread(L);
   lua_pushvalue(L, 1);  /* move function to top */
   lua_xmove(L, NL, 1);  /* move function from L to NL */

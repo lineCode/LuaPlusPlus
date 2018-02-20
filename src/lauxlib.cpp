@@ -48,7 +48,7 @@ static int findfield (lua_State *L, int objidx, int level) {
     return 0;  /* not found */
   lua_pushnil(L);  /* start 'next' loop */
   while (lua_next(L, -2)) {  /* for each pair in table */
-    if (lua_type(L, -2) == LUA_TSTRING) {  /* ignore non-string keys */
+    if (lua_type(L, -2) == LuaType::Basic::String) {  /* ignore non-string keys */
       if (lua_rawequal(L, objidx, -1)) {  /* found object? */
         lua_pop(L, 1);  /* remove value (but keep name) */
         return 1;
@@ -161,39 +161,42 @@ LUALIB_API void luaL_traceback (lua_State *L, lua_State *L1,
 ** =======================================================
 */
 
-LUALIB_API int luaL_argerror (lua_State *L, int arg, const char *extramsg) {
+LUALIB_API bool luaL_argerror (lua_State *L, int arg, const char *extramsg)
+{
   lua_Debug ar;
   if (!lua_getstack(L, 0, &ar))  /* no stack frame? */
-    return luaL_error(L, "bad argument #%d (%s)", arg, extramsg);
+    luaL_error(L, "bad argument #%d (%s)", arg, extramsg);
   lua_getinfo(L, "n", &ar);
   if (strcmp(ar.namewhat, "method") == 0) {
     arg--;  /* do not count 'self' */
     if (arg == 0)  /* error is in the self argument itself? */
-      return luaL_error(L, "calling '%s' on bad self (%s)",
-                           ar.name, extramsg);
+      luaL_error(L, "calling '%s' on bad self (%s)", ar.name, extramsg);
   }
   if (ar.name == nullptr)
     ar.name = (pushglobalfuncname(L, &ar)) ? lua_tostring(L, -1) : "?";
-  return luaL_error(L, "bad argument #%d to '%s' (%s)",
-                        arg, ar.name, extramsg);
+  luaL_error(L, "bad argument #%d to '%s' (%s)", arg, ar.name, extramsg);
+
+  // arg check uses the return value in an expression although this will never be reached.
+  return false;
 }
 
 
-static int typeerror (lua_State *L, int arg, const char *tname) {
-  const char *msg;
-  const char *typearg;  /* name for the type of the actual argument */
-  if (luaL_getmetafield(L, arg, "__name") == LUA_TSTRING)
+static void typeerror (lua_State *L, int arg, const char *tname)
+{
+  const char* typearg;  /* name for the type of the actual argument */
+  if (luaL_getmetafield(L, arg, "__name") == LuaType::Basic::String)
     typearg = lua_tostring(L, -1);  /* use the given type name */
-  else if (lua_type(L, arg) == LUA_TLIGHTUSERDATA)
+  else if (lua_type(L, arg) == LuaType::Basic::LightUserData)
     typearg = "light userdata";  /* special name for messages */
   else
     typearg = luaL_typename(L, arg);  /* standard name */
-  msg = lua_pushfstring(L, "%s expected, got %s", tname, typearg);
-  return luaL_argerror(L, arg, msg);
+  const char* msg = lua_pushfstring(L, "%s expected, got %s", tname, typearg);
+  luaL_argerror(L, arg, msg);
 }
 
 
-static void tag_error (lua_State *L, int arg, int tag) {
+static void tag_error (lua_State *L, int arg, LuaType tag)
+{
   typeerror(L, arg, lua_typename(L, tag));
 }
 
@@ -220,14 +223,15 @@ LUALIB_API void luaL_where (lua_State *L, int level) {
 ** not need reserved stack space when called. (At worst, it generates
 ** an error with "stack overflow" instead of the given message.)
 */
-LUALIB_API int luaL_error (lua_State *L, const char *fmt, ...) {
+LUALIB_API void luaL_error (lua_State *L, const char *fmt, ...)
+{
   va_list argp;
   va_start(argp, fmt);
   luaL_where(L, 1);
   lua_pushvfstring(L, fmt, argp);
   va_end(argp);
   lua_concat(L, 2);
-  return lua_error(L);
+  lua_error(L);
 }
 
 
@@ -296,8 +300,9 @@ LUALIB_API int luaL_execresult (lua_State *L, int stat) {
 ** =======================================================
 */
 
-LUALIB_API int luaL_newmetatable (lua_State *L, const char *tname) {
-  if (luaL_getmetatable(L, tname) != LUA_TNIL)  /* name already in use? */
+LUALIB_API int luaL_newmetatable (lua_State *L, const char *tname)
+{
+  if (luaL_getmetatable(L, tname) != LuaType::Basic::Nil)  /* name already in use? */
     return 0;  /* leave previous value on top, but return 0 */
   lua_pop(L, 1);
   lua_createtable(L, 0, 2);  /* create metatable */
@@ -346,15 +351,15 @@ LUALIB_API void *luaL_checkudata (lua_State *L, int ud, const char *tname) {
 */
 
 LUALIB_API int luaL_checkoption (lua_State *L, int arg, const char *def,
-                                 const char *const lst[]) {
+                                 const char *const lst[])
+{
   const char *name = (def) ? luaL_optstring(L, arg, def) :
                              luaL_checkstring(L, arg);
   int i;
   for (i=0; lst[i]; i++)
     if (strcmp(lst[i], name) == 0)
       return i;
-  return luaL_argerror(L, arg,
-                       lua_pushfstring(L, "invalid option '%s'", name));
+  luaL_argerror(L, arg, lua_pushfstring(L, "invalid option '%s'", name));
 }
 
 
@@ -375,28 +380,38 @@ LUALIB_API void luaL_checkstack (lua_State *L, int space, const char *msg) {
 }
 
 
-LUALIB_API void luaL_checktype (lua_State *L, int arg, int t) {
+LUALIB_API void luaL_checktype (lua_State *L, int arg, LuaType::Basic t)
+{
   if (lua_type(L, arg) != t)
     tag_error(L, arg, t);
 }
 
+LUALIB_API void (luaL_checktype) (lua_State *L, int arg, LuaType::Variant t)
+{
+  if (lua_variant_type(L, arg) != t)
+    tag_error(L, arg, t);
+}
 
-LUALIB_API void luaL_checkany (lua_State *L, int arg) {
-  if (lua_type(L, arg) == LUA_TNONE)
+
+LUALIB_API void luaL_checkany (lua_State *L, int arg)
+{
+  if (lua_type(L, arg) == LuaType::Variant::None)
     luaL_argerror(L, arg, "value expected");
 }
 
 
 LUALIB_API const char *luaL_checklstring (lua_State *L, int arg, size_t *len) {
   const char *s = lua_tolstring(L, arg, len);
-  if (!s) tag_error(L, arg, LUA_TSTRING);
+  if (!s)
+    tag_error(L, arg, LuaType::Basic::String);
   return s;
 }
 
 
 LUALIB_API const char *luaL_optlstring (lua_State *L, int arg,
                                         const char *def, size_t *len) {
-  if (lua_isnoneornil(L, arg)) {
+  if (lua_isnoneornil(L, arg))
+  {
     if (len)
       *len = (def ? strlen(def) : 0);
     return def;
@@ -405,11 +420,12 @@ LUALIB_API const char *luaL_optlstring (lua_State *L, int arg,
 }
 
 
-LUALIB_API lua_Number luaL_checknumber (lua_State *L, int arg) {
+LUALIB_API lua_Number luaL_checknumber (lua_State *L, int arg)
+{
   int isnum;
   lua_Number d = lua_tonumberx(L, arg, &isnum);
   if (!isnum)
-    tag_error(L, arg, LUA_TNUMBER);
+    tag_error(L, arg, LuaType::Basic::Number);
   return d;
 }
 
@@ -419,11 +435,12 @@ LUALIB_API lua_Number luaL_optnumber (lua_State *L, int arg, lua_Number def) {
 }
 
 
-static void interror (lua_State *L, int arg) {
+static void interror (lua_State *L, int arg)
+{
   if (lua_isnumber(L, arg))
     luaL_argerror(L, arg, "number has no integer representation");
   else
-    tag_error(L, arg, LUA_TNUMBER);
+    tag_error(L, arg, LuaType::Basic::Number);
 }
 
 
@@ -592,7 +609,8 @@ LUALIB_API char *luaL_buffinitsize (lua_State *L, luaL_Buffer *B, size_t sz) {
 
 LUALIB_API int luaL_ref (lua_State *L, int t) {
   int ref;
-  if (lua_isnil(L, -1)) {
+  if (lua_isnil(L, -1))
+  {
     lua_pop(L, 1);  /* remove from stack */
     return LUA_REFNIL;  /* 'nil' has a unique fixed reference */
   }
@@ -767,25 +785,24 @@ LUALIB_API int luaL_loadstring (lua_State *L, const char *s) {
 
 
 
-LUALIB_API int luaL_getmetafield (lua_State *L, int obj, const char *event) {
+LUALIB_API LuaType luaL_getmetafield (lua_State *L, int obj, const char *event)
+{
   if (!lua_getmetatable(L, obj))  /* no metatable? */
-    return LUA_TNIL;
-  else {
-    int tt;
-    lua_pushstring(L, event);
-    tt = lua_rawget(L, -2);
-    if (tt == LUA_TNIL)  /* is metafield nil? */
-      lua_pop(L, 2);  /* remove metatable and metafield */
-    else
-      lua_remove(L, -2);  /* remove only metatable */
-    return tt;  /* return metafield type */
-  }
+    return LuaType::Basic::Nil;
+
+  lua_pushstring(L, event);
+  LuaType type = lua_rawget(L, -2);
+  if (type == LuaType::Basic::Nil)  /* is metafield nil? */
+    lua_pop(L, 2);  /* remove metatable and metafield */
+  else
+    lua_remove(L, -2);  /* remove only metatable */
+  return type;  /* return metafield type */
 }
 
 
 LUALIB_API int luaL_callmeta (lua_State *L, int obj, const char *event) {
   obj = lua_absindex(L, obj);
-  if (luaL_getmetafield(L, obj, event) == LUA_TNIL)  /* no metafield? */
+  if (luaL_getmetafield(L, obj, event) == LuaType::Basic::Nil)  /* no metafield? */
     return 0;
   lua_pushvalue(L, obj);
   lua_call(L, 1, 1);
@@ -811,29 +828,31 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
       luaL_error(L, "'__tostring' must return a string");
   }
   else {
-    switch (lua_type(L, idx)) {
-      case LUA_TNUMBER: {
+    switch (lua_type(L, idx).asBasicStrict())
+    {
+      case LuaType::Basic::Number:
+      {
         if (lua_isinteger(L, idx))
           lua_pushfstring(L, "%I", (LUA_INTEGER)lua_tointeger(L, idx));
         else
           lua_pushfstring(L, "%f", (LUA_NUMBER)lua_tonumber(L, idx));
         break;
       }
-      case LUA_TSTRING:
+      case LuaType::Basic::String:
         lua_pushvalue(L, idx);
         break;
-      case LUA_TBOOLEAN:
+      case LuaType::Basic::Boolean:
         lua_pushstring(L, (lua_toboolean(L, idx) ? "true" : "false"));
         break;
-      case LUA_TNIL:
+      case LuaType::Basic::Nil:
         lua_pushliteral(L, "nil");
         break;
-      default: {
-        int tt = luaL_getmetafield(L, idx, "__name");  /* try name */
-        const char *kind = (tt == LUA_TSTRING) ? lua_tostring(L, -1) :
-                                                 luaL_typename(L, idx);
+      default:
+      {
+        LuaType type = luaL_getmetafield(L, idx, "__name");  /* try name */
+        const char* kind = (type == LuaType::Basic::String) ? lua_tostring(L, -1) : luaL_typename(L, idx);
         lua_pushfstring(L, "%s: %p", kind, lua_topointer(L, idx));
-        if (tt != LUA_TNIL)
+        if (type != LuaType::Basic::Nil)
           lua_remove(L, -2);  /* remove '__name' */
         break;
       }
@@ -864,17 +883,16 @@ LUALIB_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
 ** ensure that stack[idx][fname] has a table and push that table
 ** into the stack
 */
-LUALIB_API int luaL_getsubtable (lua_State *L, int idx, const char *fname) {
-  if (lua_getfield(L, idx, fname) == LUA_TTABLE)
+LUALIB_API int luaL_getsubtable (lua_State *L, int idx, const char *fname)
+{
+  if (lua_getfield(L, idx, fname) == LuaType::Basic::Table)
     return 1;  /* table already there */
-  else {
-    lua_pop(L, 1);  /* remove previous result */
-    idx = lua_absindex(L, idx);
-    lua_newtable(L);
-    lua_pushvalue(L, -1);  /* copy to be left at top */
-    lua_setfield(L, idx, fname);  /* assign new table to field */
-    return 0;  /* false, because did not find table there */
-  }
+  lua_pop(L, 1);  /* remove previous result */
+  idx = lua_absindex(L, idx);
+  lua_newtable(L);
+  lua_pushvalue(L, -1);  /* copy to be left at top */
+  lua_setfield(L, idx, fname);  /* assign new table to field */
+  return 0;  /* false, because did not find table there */
 }
 
 

@@ -244,16 +244,27 @@ LUA_API void lua_pushvalue (lua_State *L, int idx) {
 */
 
 
-LUA_API int lua_type (lua_State *L, int idx) {
+LUA_API LuaType lua_type (lua_State* L, int idx)
+{
   StkId o = index2addr(L, idx);
-  return (isvalid(o) ? ttnov(o) : LUA_TNONE);
+  if (isvalid(o))
+    return ttnov(o);
+  return LuaType::Variant::None;
+}
+
+LUA_API LuaType lua_variant_type (lua_State* L, int idx)
+{
+  StkId o = index2addr(L, idx);
+  if (isvalid(o))
+    return rttype(o);
+  return LuaType::Variant::None;
 }
 
 
-LUA_API const char *lua_typename (lua_State *L, int t) {
+LUA_API const char *lua_typename (lua_State *L, LuaType t)
+{
   UNUSED(L);
-  api_check(L, LUA_TNONE <= t && t < LUA_NUMTAGS, "invalid tag");
-  return ttypename(t);
+  return LuaType::toString(t.asVariant());
 }
 
 
@@ -385,13 +396,15 @@ LUA_API const char *lua_tolstring (lua_State *L, int idx, size_t *len) {
 }
 
 
-LUA_API size_t lua_rawlen (lua_State *L, int idx) {
+LUA_API size_t lua_rawlen (lua_State *L, int idx)
+{
   StkId o = index2addr(L, idx);
-  switch (ttype(o)) {
-    case LUA_TSHRSTR: return tsvalue(o)->shrlen;
-    case LUA_TLNGSTR: return tsvalue(o)->u.lnglen;
-    case LUA_TUSERDATA: return uvalue(o)->len;
-    case LUA_TTABLE: return luaH_getn(hvalue(o));
+  switch (ttype(o))
+  {
+    case LuaType::Variant::ShortString: return tsvalue(o)->shrlen;
+    case LuaType::Variant::LongString: return tsvalue(o)->u.lnglen;
+    case LuaType::Variant::UserData: return uvalue(o)->len;
+    case LuaType::Variant::Table: return luaH_getn(hvalue(o));
     default: return 0;
   }
 }
@@ -408,9 +421,10 @@ LUA_API lua_CFunction lua_tocfunction (lua_State *L, int idx) {
 
 LUA_API void *lua_touserdata (lua_State *L, int idx) {
   StkId o = index2addr(L, idx);
-  switch (ttnov(o)) {
-    case LUA_TUSERDATA: return getudatamem(uvalue(o));
-    case LUA_TLIGHTUSERDATA: return pvalue(o);
+  switch (ttnov(o))
+  {
+    case LuaType::Basic::UserData: return getudatamem(uvalue(o));
+    case LuaType::Basic::LightUserData: return pvalue(o);
     default: return nullptr;
   }
 }
@@ -422,16 +436,18 @@ LUA_API lua_State *lua_tothread (lua_State *L, int idx) {
 }
 
 
-LUA_API const void *lua_topointer (lua_State *L, int idx) {
+LUA_API const void *lua_topointer (lua_State *L, int idx)
+{
   StkId o = index2addr(L, idx);
-  switch (ttype(o)) {
-    case LUA_TTABLE: return hvalue(o);
-    case LUA_TLCL: return clLvalue(o);
-    case LUA_TCCL: return clCvalue(o);
-    case LUA_TLCF: return cast(void *, cast(size_t, fvalue(o)));
-    case LUA_TTHREAD: return thvalue(o);
-    case LUA_TUSERDATA: return getudatamem(uvalue(o));
-    case LUA_TLIGHTUSERDATA: return pvalue(o);
+  switch (ttype(o))
+  {
+    case LuaType::Variant::Table: return hvalue(o);
+    case LuaType::Variant::LuaFunctionClosure: return clLvalue(o);
+    case LuaType::Variant::CFunctionClosure: return clCvalue(o);
+    case LuaType::Variant::LightCFunction: return cast(void *, cast(size_t, fvalue(o)));
+    case LuaType::Variant::Thread: return thvalue(o);
+    case LuaType::Variant::UserData: return getudatamem(uvalue(o));
+    case LuaType::Variant::LightUserData: return pvalue(o);
     default: return nullptr;
   }
 }
@@ -580,7 +596,8 @@ LUA_API int lua_pushthread (lua_State *L) {
 */
 
 
-static int auxgetstr (lua_State *L, const TValue *t, const char *k) {
+static LuaType auxgetstr (lua_State *L, const TValue *t, const char *k)
+{
   const TValue *slot;
   TString *str = luaS_new(L, k);
   if (luaV_fastget(L, t, str, slot, luaH_getstr)) {
@@ -597,14 +614,16 @@ static int auxgetstr (lua_State *L, const TValue *t, const char *k) {
 }
 
 
-LUA_API int lua_getglobal (lua_State *L, const char *name) {
+LUA_API LuaType lua_getglobal (lua_State *L, const char *name)
+{
   Table *reg = hvalue(&L->globalState->l_registry);
   lua_lock(L);
   return auxgetstr(L, luaH_getint(reg, LUA_RIDX_GLOBALS), name);
 }
 
 
-LUA_API int lua_gettable (lua_State *L, int idx) {
+LUA_API LuaType lua_gettable (lua_State *L, int idx)
+{
   StkId t;
   lua_lock(L);
   t = index2addr(L, idx);
@@ -614,13 +633,14 @@ LUA_API int lua_gettable (lua_State *L, int idx) {
 }
 
 
-LUA_API int lua_getfield (lua_State *L, int idx, const char *k) {
+LUA_API LuaType lua_getfield (lua_State *L, int idx, const char *k)
+{
   lua_lock(L);
   return auxgetstr(L, index2addr(L, idx), k);
 }
 
 
-LUA_API int lua_geti (lua_State *L, int idx, lua_Integer n) {
+LUA_API LuaType lua_geti (lua_State *L, int idx, lua_Integer n) {
   StkId t;
   const TValue *slot;
   lua_lock(L);
@@ -639,7 +659,7 @@ LUA_API int lua_geti (lua_State *L, int idx, lua_Integer n) {
 }
 
 
-LUA_API int lua_rawget (lua_State *L, int idx) {
+LUA_API LuaType lua_rawget (lua_State *L, int idx) {
   StkId t;
   lua_lock(L);
   t = index2addr(L, idx);
@@ -650,7 +670,7 @@ LUA_API int lua_rawget (lua_State *L, int idx) {
 }
 
 
-LUA_API int lua_rawgeti (lua_State *L, int idx, lua_Integer n) {
+LUA_API LuaType lua_rawgeti (lua_State *L, int idx, lua_Integer n) {
   StkId t;
   lua_lock(L);
   t = index2addr(L, idx);
@@ -662,7 +682,7 @@ LUA_API int lua_rawgeti (lua_State *L, int idx, lua_Integer n) {
 }
 
 
-LUA_API int lua_rawgetp (lua_State *L, int idx, const void *p) {
+LUA_API LuaType lua_rawgetp (lua_State *L, int idx, const void *p) {
   StkId t;
   TValue k;
   lua_lock(L);
@@ -695,15 +715,16 @@ LUA_API int lua_getmetatable (lua_State *L, int objindex) {
   int res = 0;
   lua_lock(L);
   obj = index2addr(L, objindex);
-  switch (ttnov(obj)) {
-    case LUA_TTABLE:
+  switch (ttnov(obj))
+  {
+    case LuaType::Basic::Table:
       mt = hvalue(obj)->metatable;
       break;
-    case LUA_TUSERDATA:
+    case LuaType::Basic::UserData:
       mt = uvalue(obj)->metatable;
       break;
     default:
-      mt = L->globalState->mt[ttnov(obj)];
+      mt = L->globalState->mt[LuaType::DataType(ttnov(obj))];
       break;
   }
   if (mt != nullptr) {
@@ -716,7 +737,8 @@ LUA_API int lua_getmetatable (lua_State *L, int objindex) {
 }
 
 
-LUA_API int lua_getuservalue (lua_State *L, int idx) {
+LUA_API LuaType lua_getuservalue (lua_State *L, int idx)
+{
   StkId o;
   lua_lock(L);
   o = index2addr(L, idx);
@@ -850,8 +872,10 @@ LUA_API int lua_setmetatable (lua_State *L, int objindex) {
     api_check(L, ttistable(L->top - 1), "table expected");
     mt = hvalue(L->top - 1);
   }
-  switch (ttnov(obj)) {
-    case LUA_TTABLE: {
+  switch (ttnov(obj))
+  {
+    case LuaType::Basic::Table:
+    {
       hvalue(obj)->metatable = mt;
       if (mt) {
         luaC_objbarrier(L, gcvalue(obj), mt);
@@ -859,7 +883,8 @@ LUA_API int lua_setmetatable (lua_State *L, int objindex) {
       }
       break;
     }
-    case LUA_TUSERDATA: {
+    case LuaType::Basic::UserData:
+    {
       uvalue(obj)->metatable = mt;
       if (mt) {
         luaC_objbarrier(L, uvalue(obj), mt);
@@ -867,8 +892,9 @@ LUA_API int lua_setmetatable (lua_State *L, int objindex) {
       }
       break;
     }
-    default: {
-      L->globalState->mt[ttnov(obj)] = mt;
+    default:
+    {
+      L->globalState->mt[LuaType::DataType(ttnov(obj))] = mt;
       break;
     }
   }
@@ -1106,7 +1132,7 @@ LUA_API int lua_gc (lua_State *L, int what, int data) {
 */
 
 
-LUA_API int lua_error (lua_State *L)
+LUA_API void lua_error (lua_State *L)
 {
   lua_lock(L);
   api_checknelems(L, 1);
@@ -1116,9 +1142,7 @@ LUA_API int lua_error (lua_State *L)
   if (ttisstring(o))
     what = svalue(o);
   luaG_errormsg(L, what);
-
   /* code unreachable; will unlock when control actually leaves the kernel */
-  return 0;  /* to avoid warnings */
 }
 
 
@@ -1180,15 +1204,18 @@ LUA_API void *lua_newuserdata (lua_State *L, size_t size) {
 
 static const char *aux_upvalue (StkId fi, int n, TValue **val,
                                 CClosure **owner, UpVal **uv) {
-  switch (ttype(fi)) {
-    case LUA_TCCL: {  /* C closure */
+  switch (ttype(fi))
+  {
+    case LuaType::Variant::CFunctionClosure:
+    {  /* C closure */
       CClosure *f = clCvalue(fi);
       if (!(1 <= n && n <= f->nupvalues)) return nullptr;
       *val = &f->upvalue[n-1];
       if (owner) *owner = f;
       return "";
     }
-    case LUA_TLCL: {  /* Lua closure */
+    case LuaType::Variant::LuaFunctionClosure:
+    {  /* Lua closure */
       LClosure *f = clLvalue(fi);
       TString *name;
       Proto *p = f->p;
@@ -1249,13 +1276,15 @@ static UpVal **getupvalref (lua_State *L, int fidx, int n, LClosure **pf) {
 }
 
 
-LUA_API void *lua_upvalueid (lua_State *L, int fidx, int n) {
+LUA_API void *lua_upvalueid (lua_State *L, int fidx, int n)
+{
   StkId fi = index2addr(L, fidx);
-  switch (ttype(fi)) {
-    case LUA_TLCL: {  /* lua closure */
+  switch (ttype(fi))
+  {
+    case LuaType::Variant::LuaFunctionClosure:
       return *getupvalref(L, fidx, n, nullptr);
-    }
-    case LUA_TCCL: {  /* C closure */
+    case LuaType::Variant::CFunctionClosure:
+    {
       CClosure *f = clCvalue(fi);
       api_check(L, 1 <= n && n <= f->nupvalues, "invalid upvalue index");
       return &f->upvalue[n - 1];

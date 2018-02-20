@@ -9,7 +9,7 @@
 #include <cstdarg>
 #include <cstddef>
 #include <luaconf.hpp>
-
+#include <ltype.hpp>
 
 #define LUA_VERSION_MAJOR	"5"
 #define LUA_VERSION_MINOR	"3"
@@ -49,25 +49,6 @@
 
 
 class lua_State;
-
-
-/*
-** basic types
-*/
-#define LUA_TNONE		(-1)
-
-#define LUA_TNIL		0
-#define LUA_TBOOLEAN		1
-#define LUA_TLIGHTUSERDATA	2
-#define LUA_TNUMBER		3
-#define LUA_TSTRING		4
-#define LUA_TTABLE		5
-#define LUA_TFUNCTION		6
-#define LUA_TUSERDATA		7
-#define LUA_TTHREAD		8
-
-#define LUA_NUMTAGS		9
-
 
 
 /* minimum Lua stack available to a C function */
@@ -153,8 +134,9 @@ LUA_API int             (lua_isstring) (lua_State *L, int idx);
 LUA_API int             (lua_iscfunction) (lua_State *L, int idx);
 LUA_API int             (lua_isinteger) (lua_State *L, int idx);
 LUA_API int             (lua_isuserdata) (lua_State *L, int idx);
-LUA_API int             (lua_type) (lua_State *L, int idx);
-LUA_API const char     *(lua_typename) (lua_State *L, int tp);
+LUA_API LuaType         (lua_type) (lua_State *L, int idx);
+LUA_API LuaType         (lua_variant_type) (lua_State *L, int idx);
+LUA_API const char     *(lua_typename) (lua_State *L, LuaType tp);
 
 LUA_API lua_Number      (lua_tonumberx) (lua_State *L, int idx, int *isnum);
 LUA_API lua_Integer     (lua_tointegerx) (lua_State *L, int idx, int *isnum);
@@ -216,18 +198,18 @@ LUA_API int   (lua_pushthread) (lua_State *L);
 /*
 ** get functions (Lua -> stack)
 */
-LUA_API int (lua_getglobal) (lua_State *L, const char *name);
-LUA_API int (lua_gettable) (lua_State *L, int idx);
-LUA_API int (lua_getfield) (lua_State *L, int idx, const char *k);
-LUA_API int (lua_geti) (lua_State *L, int idx, lua_Integer n);
-LUA_API int (lua_rawget) (lua_State *L, int idx);
-LUA_API int (lua_rawgeti) (lua_State *L, int idx, lua_Integer n);
-LUA_API int (lua_rawgetp) (lua_State *L, int idx, const void *p);
+LUA_API LuaType (lua_getglobal) (lua_State *L, const char *name);
+LUA_API LuaType (lua_gettable) (lua_State *L, int idx);
+LUA_API LuaType (lua_getfield) (lua_State *L, int idx, const char *k);
+LUA_API LuaType (lua_geti) (lua_State *L, int idx, lua_Integer n);
+LUA_API LuaType (lua_rawget) (lua_State *L, int idx);
+LUA_API LuaType (lua_rawgeti) (lua_State *L, int idx, lua_Integer n);
+LUA_API LuaType (lua_rawgetp) (lua_State *L, int idx, const void *p);
 
 LUA_API void  (lua_createtable) (lua_State *L, int narr, int nrec);
 LUA_API void *(lua_newuserdata) (lua_State *L, size_t sz);
 LUA_API int   (lua_getmetatable) (lua_State *L, int objindex);
-LUA_API int  (lua_getuservalue) (lua_State *L, int idx);
+LUA_API LuaType  (lua_getuservalue) (lua_State *L, int idx);
 
 
 /*
@@ -294,7 +276,8 @@ LUA_API int (lua_gc) (lua_State *L, int what, int data);
 ** miscellaneous functions
 */
 
-LUA_API int   (lua_error) (lua_State *L);
+[[noreturn]]
+LUA_API void  (lua_error) (lua_State *L);
 
 LUA_API int   (lua_next) (lua_State *L, int idx);
 
@@ -322,14 +305,14 @@ LUA_API size_t   (lua_stringtonumber) (lua_State *L, const char *s);
 
 #define lua_pushcfunction(L,f)	lua_pushcclosure(L, (f), 0)
 
-#define lua_isfunction(L,n)	(lua_type(L, (n)) == LUA_TFUNCTION)
-#define lua_istable(L,n)	(lua_type(L, (n)) == LUA_TTABLE)
-#define lua_islightuserdata(L,n)	(lua_type(L, (n)) == LUA_TLIGHTUSERDATA)
-#define lua_isnil(L,n)		(lua_type(L, (n)) == LUA_TNIL)
-#define lua_isboolean(L,n)	(lua_type(L, (n)) == LUA_TBOOLEAN)
-#define lua_isthread(L,n)	(lua_type(L, (n)) == LUA_TTHREAD)
-#define lua_isnone(L,n)		(lua_type(L, (n)) == LUA_TNONE)
-#define lua_isnoneornil(L, n)	(lua_type(L, (n)) <= 0)
+#define lua_isfunction(L,n)	(lua_type(L, (n)) == LuaType::Basic::Function)
+#define lua_istable(L,n)	(lua_type(L, (n)) == LuaType::Basic::Table)
+#define lua_islightuserdata(L,n)	(lua_type(L, (n)) == LuaType::Basic::LightUserData)
+#define lua_isnil(L,n)		(lua_type(L, (n)) == LuaType::Basic::Nil)
+#define lua_isboolean(L,n)	(lua_type(L, (n)) == LuaType::Basic::Boolean)
+#define lua_isthread(L,n)	(lua_type(L, (n)) == LuaType::Basic::Thread)
+#define lua_isnone(L,n)		(lua_type(L, (n)) == LuaType::Variant::None)
+#define lua_isnoneornil(L, n)	(lua_type(L, (n)).asUnderlying() <= LuaType::DataType(LuaType::Basic::Nil))
 
 #define lua_pushliteral(L, s)	lua_pushstring(L, "" s)
 

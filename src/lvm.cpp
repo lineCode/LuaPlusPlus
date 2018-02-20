@@ -406,7 +406,7 @@ int luaV_lessequal (lua_State *L, const TValue *l, const TValue *r) {
 int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
   const TValue *tm;
   if (ttype(t1) != ttype(t2)) {  /* not the same variant? */
-    if (ttnov(t1) != ttnov(t2) || ttnov(t1) != LUA_TNUMBER)
+    if (ttnov(t1) != ttnov(t2) || ttnov(t1) != LuaType::Basic::Number)
       return 0;  /* only numbers can be equal with different variants */
     else {  /* two numbers with different variants */
       lua_Integer i1, i2;  /* compare them as integers */
@@ -414,16 +414,18 @@ int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
     }
   }
   /* values have same type and same variant */
-  switch (ttype(t1)) {
-    case LUA_TNIL: return 1;
-    case LUA_TNUMINT: return (ivalue(t1) == ivalue(t2));
-    case LUA_TNUMFLT: return luai_numeq(fltvalue(t1), fltvalue(t2));
-    case LUA_TBOOLEAN: return bvalue(t1) == bvalue(t2);  /* true must be 1 !! */
-    case LUA_TLIGHTUSERDATA: return pvalue(t1) == pvalue(t2);
-    case LUA_TLCF: return fvalue(t1) == fvalue(t2);
-    case LUA_TSHRSTR: return eqshrstr(tsvalue(t1), tsvalue(t2));
-    case LUA_TLNGSTR: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
-    case LUA_TUSERDATA: {
+  switch (ttype(t1))
+  {
+    case LuaType::Variant::Nil: return 1;
+    case LuaType::Variant::IntNumber: return (ivalue(t1) == ivalue(t2));
+    case LuaType::Variant::FloatNumber: return luai_numeq(fltvalue(t1), fltvalue(t2));
+    case LuaType::Variant::Boolean: return bvalue(t1) == bvalue(t2);  /* true must be 1 !! */
+    case LuaType::Variant::LightUserData: return pvalue(t1) == pvalue(t2);
+    case LuaType::Variant::LightCFunction: return fvalue(t1) == fvalue(t2);
+    case LuaType::Variant::ShortString: return eqshrstr(tsvalue(t1), tsvalue(t2));
+    case LuaType::Variant::LongString: return luaS_eqlngstr(tsvalue(t1), tsvalue(t2));
+    case LuaType::Variant::UserData:
+    {
       if (uvalue(t1) == uvalue(t2)) return 1;
       else if (L == nullptr) return 0;
       tm = fasttm(L, uvalue(t1)->metatable, TM_EQ);
@@ -431,7 +433,8 @@ int luaV_equalobj (lua_State *L, const TValue *t1, const TValue *t2) {
         tm = fasttm(L, uvalue(t2)->metatable, TM_EQ);
       break;  /* will try TM */
     }
-    case LUA_TTABLE: {
+    case LuaType::Variant::Table:
+    {
       if (hvalue(t1) == hvalue(t2)) return 1;
       else if (L == nullptr) return 0;
       tm = fasttm(L, hvalue(t1)->metatable, TM_EQ);
@@ -514,24 +517,29 @@ void luaV_concat (lua_State *L, int total) {
 ** Main operation 'ra' = #rb'.
 */
 void luaV_objlen (lua_State *L, StkId ra, const TValue *rb) {
-  const TValue *tm;
-  switch (ttype(rb)) {
-    case LUA_TTABLE: {
+  const TValue* tm = nullptr;
+  switch (ttype(rb))
+  {
+    case LuaType::Variant::Table:
+    {
       Table *h = hvalue(rb);
       tm = fasttm(L, h->metatable, TM_LEN);
       if (tm) break;  /* metamethod? break switch to call it */
       setivalue(ra, luaH_getn(h));  /* else primitive len */
       return;
     }
-    case LUA_TSHRSTR: {
+    case LuaType::Variant::ShortString:
+    {
       setivalue(ra, tsvalue(rb)->shrlen);
       return;
     }
-    case LUA_TLNGSTR: {
+    case LuaType::Variant::LongString:
+    {
       setivalue(ra, tsvalue(rb)->u.lnglen);
       return;
     }
-    default: {  /* try metamethod */
+    default:
+    {  /* try metamethod */
       tm = luaT_gettmbyobj(L, rb, TM_LEN);
       if (ttisnil(tm))  /* no metamethod? */
         luaG_typeerror(L, rb, "get length of");

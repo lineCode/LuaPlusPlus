@@ -484,8 +484,8 @@ static int checkload (lua_State *L, int stat, const char *filename) {
     return 2;  /* return open function and file name */
   }
   else
-    return luaL_error(L, "error loading module '%s' from file '%s':\n\t%s",
-                          lua_tostring(L, 1), filename, lua_tostring(L, -1));
+    luaL_error(L, "error loading module '%s' from file '%s':\n\t%s",
+               lua_tostring(L, 1), filename, lua_tostring(L, -1));
 }
 
 
@@ -557,7 +557,7 @@ static int searcher_Croot (lua_State *L) {
 static int searcher_preload (lua_State *L) {
   const char *name = luaL_checkstring(L, 1);
   lua_getfield(L, LUA_REGISTRYINDEX, LUA_PRELOAD_TABLE);
-  if (lua_getfield(L, -1, name) == LUA_TNIL)  /* not found? */
+  if (lua_getfield(L, -1, name) == LuaType::Basic::Nil)  /* not found? */
     lua_pushfstring(L, "\n\tno field package.preload['%s']", name);
   return 1;
 }
@@ -568,11 +568,11 @@ static void findloader (lua_State *L, const char *name) {
   luaL_Buffer msg;  /* to build error message */
   luaL_buffinit(L, &msg);
   /* push 'package.searchers' to index 3 in the stack */
-  if (lua_getfield(L, lua_upvalueindex(1), "searchers") != LUA_TTABLE)
+  if (lua_getfield(L, lua_upvalueindex(1), "searchers") != LuaType::Basic::Table)
     luaL_error(L, "'package.searchers' must be a table");
   /*  iterate over available searchers to find a loader */
   for (i = 1; ; i++) {
-    if (lua_rawgeti(L, 3, i) == LUA_TNIL) {  /* no more searchers? */
+    if (lua_rawgeti(L, 3, i) == LuaType::Basic::Nil) {  /* no more searchers? */
       lua_pop(L, 1);  /* remove nil */
       luaL_pushresult(&msg);  /* create error message */
       luaL_error(L, "module '%s' not found:%s", name, lua_tostring(L, -1));
@@ -606,7 +606,7 @@ static int ll_require (lua_State *L) {
   lua_call(L, 2, 1);  /* run loader to load module */
   if (!lua_isnil(L, -1))  /* non-nil return? */
     lua_setfield(L, 2, name);  /* LOADED[name] = returned value */
-  if (lua_getfield(L, 2, name) == LUA_TNIL) {   /* module set no value? */
+  if (lua_getfield(L, 2, name) == LuaType::Basic::Nil) {   /* module set no value? */
     lua_pushboolean(L, 1);  /* use true as result */
     lua_pushvalue(L, -1);  /* extra copy to be returned */
     lua_setfield(L, 2, name);  /* LOADED[name] = true */

@@ -165,7 +165,7 @@ static int os_tmpname (lua_State *L) {
   int err;
   lua_tmpnam(buff, err);
   if (err)
-    return luaL_error(L, "unable to generate a unique filename");
+    luaL_error(L, "unable to generate a unique filename");
   lua_pushstring(L, buff);
   return 1;
 }
@@ -222,7 +222,7 @@ static void setallfields (lua_State *L, struct tm *stm) {
 
 static int getboolfield (lua_State *L, const char *key) {
   int res;
-  res = (lua_getfield(L, -1, key) == LUA_TNIL) ? -1 : lua_toboolean(L, -1);
+  res = (lua_getfield(L, -1, key) == LuaType::Basic::Nil) ? -1 : lua_toboolean(L, -1);
   lua_pop(L, 1);
   return res;
 }
@@ -235,18 +235,18 @@ static int getboolfield (lua_State *L, const char *key) {
 
 static int getfield (lua_State *L, const char *key, int d, int delta) {
   int isnum;
-  int t = lua_getfield(L, -1, key);  /* get field and its type */
+  LuaType t = lua_getfield(L, -1, key);  /* get field and its type */
   lua_Integer res = lua_tointegerx(L, -1, &isnum);
   if (!isnum) {  /* field is not an integer? */
-    if (t != LUA_TNIL)  /* some other value? */
-      return luaL_error(L, "field '%s' is not an integer", key);
+    if (t != LuaType::Basic::Nil)  /* some other value? */
+      luaL_error(L, "field '%s' is not an integer", key);
     else if (d < 0)  /* absent field; no default? */
-      return luaL_error(L, "field '%s' missing in date table", key);
+      luaL_error(L, "field '%s' missing in date table", key);
     res = d;
   }
   else {
     if (!(-L_MAXDATEFIELD <= res && res <= L_MAXDATEFIELD))
-      return luaL_error(L, "field '%s' is out-of-bound", key);
+      luaL_error(L, "field '%s' is out-of-bound", key);
     res -= delta;
   }
   lua_pop(L, 1);
@@ -324,7 +324,7 @@ static int os_time (lua_State *L) {
     t = time(nullptr);  /* get current time */
   else {
     struct tm ts;
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LuaType::Basic::Table);
     lua_settop(L, 1);  /* make sure table is at the top */
     ts.tm_sec = getfield(L, "sec", 0, 0);
     ts.tm_min = getfield(L, "min", 0, 0);

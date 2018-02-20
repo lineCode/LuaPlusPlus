@@ -90,18 +90,18 @@ void LuaPrinter::doString(const std::string& string)
   if (luaL_dostring(this->L, string.c_str()))
   {
     std::string error;
-    switch (lua_type(this->L, -1))
+    switch (lua_type(this->L, -1).asBasic())
     {
-      case LUA_TNIL:
+      case LuaType::Basic::Nil:
         error = "nil";
         break;
-      case LUA_TNUMBER:
+      case LuaType::Basic::Number:
         error = StringUtil::ssprintf(LUA_NUMBER_FMT, luaL_checknumber(this->L, -1));
         break;
-      case LUA_TBOOLEAN:
+      case LuaType::Basic::Boolean:
         error = lua_toboolean(this->L, -1) == 0 ? "false" : "true";
         break;
-      case LUA_TSTRING:
+      case LuaType::Basic::String:
         error = luaL_checkstring(this->L, -1);
         break;
       default:

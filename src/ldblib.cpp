@@ -17,6 +17,7 @@
 #include <lua.hpp>
 #include <lauxlib.hpp>
 #include <lualib.hpp>
+#include <llimits.hpp>
 
 
 /*
@@ -52,9 +53,10 @@ static int db_getmetatable (lua_State *L) {
 }
 
 
-static int db_setmetatable (lua_State *L) {
-  int t = lua_type(L, 2);
-  luaL_argcheck(L, t == LUA_TNIL || t == LUA_TTABLE, 2,
+static int db_setmetatable (lua_State *L)
+{
+  LuaType t = lua_type(L, 2);
+  luaL_argcheck(L, t == LuaType::Basic::Nil || t == LuaType::Basic::Table, 2,
                     "nil or table expected");
   lua_settop(L, 2);
   lua_setmetatable(L, 1);
@@ -63,7 +65,7 @@ static int db_setmetatable (lua_State *L) {
 
 
 static int db_getuservalue (lua_State *L) {
-  if (lua_type(L, 1) != LUA_TUSERDATA)
+  if (lua_type(L, 1) != LuaType::Basic::UserData)
     lua_pushnil(L);
   else
     lua_getuservalue(L, 1);
@@ -72,7 +74,7 @@ static int db_getuservalue (lua_State *L) {
 
 
 static int db_setuservalue (lua_State *L) {
-  luaL_checktype(L, 1, LUA_TUSERDATA);
+  luaL_checktype(L, 1, LuaType::Basic::UserData);
   luaL_checkany(L, 2);
   lua_settop(L, 2);
   lua_setuservalue(L, 1);
@@ -247,7 +249,7 @@ static int db_setlocal (lua_State *L) {
 static int auxupvalue (lua_State *L, int get) {
   const char *name;
   int n = (int)luaL_checkinteger(L, 2);  /* upvalue index */
-  luaL_checktype(L, 1, LUA_TFUNCTION);  /* closure */
+  luaL_checktype(L, 1, LuaType::Basic::Function);  /* closure */
   name = get ? lua_getupvalue(L, 1, n) : lua_setupvalue(L, 1, n);
   if (name == nullptr) return 0;
   lua_pushstring(L, name);
@@ -273,7 +275,7 @@ static int db_setupvalue (lua_State *L) {
 */
 static int checkupval (lua_State *L, int argf, int argnup) {
   int nup = (int)luaL_checkinteger(L, argnup);  /* upvalue index */
-  luaL_checktype(L, argf, LUA_TFUNCTION);  /* closure */
+  luaL_checktype(L, argf, LuaType::Basic::Function);  /* closure */
   luaL_argcheck(L, (lua_getupvalue(L, argf, nup) != NULL), argnup,
                    "invalid upvalue index");
   return nup;
@@ -306,7 +308,7 @@ static void hookf (lua_State *L, lua_Debug *ar) {
     {"call", "return", "line", "count", "tail call"};
   lua_rawgetp(L, LUA_REGISTRYINDEX, &HOOKKEY);
   lua_pushthread(L);
-  if (lua_rawget(L, -2) == LUA_TFUNCTION) {  /* is there a hook function? */
+  if (lua_rawget(L, -2) == LuaType::Basic::Function) {  /* is there a hook function? */
     lua_pushstring(L, hooknames[(int)ar->event]);  /* push event name */
     if (ar->currentline >= 0)
       lua_pushinteger(L, ar->currentline);  /* push current line */
@@ -353,11 +355,11 @@ static int db_sethook (lua_State *L) {
   }
   else {
     const char *smask = luaL_checkstring(L, arg+2);
-    luaL_checktype(L, arg+1, LUA_TFUNCTION);
+    luaL_checktype(L, arg+1, LuaType::Basic::Function);
     count = (int)luaL_optinteger(L, arg + 3, 0);
     func = hookf; mask = makemask(smask, count);
   }
-  if (lua_rawgetp(L, LUA_REGISTRYINDEX, &HOOKKEY) == LUA_TNIL) {
+  if (lua_rawgetp(L, LUA_REGISTRYINDEX, &HOOKKEY) == LuaType::Basic::Nil) {
     lua_createtable(L, 0, 2);  /* create a hook table */
     lua_pushvalue(L, -1);
     lua_rawsetp(L, LUA_REGISTRYINDEX, &HOOKKEY);  /* set it in position */

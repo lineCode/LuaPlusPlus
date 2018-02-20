@@ -260,7 +260,7 @@ static int math_random (lua_State *L) {
       up = luaL_checkinteger(L, 2);
       break;
     }
-    default: return luaL_error(L, "wrong number of arguments");
+    default: luaL_error(L, "wrong number of arguments");
   }
   /* random integer in the interval [low, up] */
   luaL_argcheck(L, low <= up, 1, "interval is empty");
@@ -280,7 +280,7 @@ static int math_randomseed (lua_State *L) {
 
 
 static int math_type (lua_State *L) {
-  if (lua_type(L, 1) == LUA_TNUMBER) {
+  if (lua_type(L, 1) == LuaType::Basic::Number) {
       if (lua_isinteger(L, 1))
         lua_pushliteral(L, "integer");
       else

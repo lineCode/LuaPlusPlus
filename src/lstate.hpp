@@ -151,7 +151,7 @@ public:
   const lua_Number* version = nullptr;  /* pointer to version number */
   TString* memerrmsg = nullptr;  /* memory-error message */
   std::array<TString*, TM_N> tmname {}; /* array with tag-method names */
-  std::array<Table*, LUA_NUMTAGS> mt {}; /* metatables for basic types */
+  std::array<Table*, LuaType::basic_types_count> mt {}; /* metatables for basic types */
   std::array<std::array<TString*, STRCACHE_M>, STRCACHE_N> strcache {}; /* cache for strings in API */
 };
 
@@ -191,18 +191,18 @@ public:
 };
 
 /* macros to convert a GCObject into a specific value */
-#define gco2ts(o) check_exp(novariant((o)->tt) == LUA_TSTRING, static_cast<TString*>(o))
-#define gco2u(o)  check_exp((o)->tt == LUA_TUSERDATA, static_cast<Udata*>(o))
-#define gco2lcl(o)  check_exp((o)->tt == LUA_TLCL, static_cast<LClosure*>(o))
-#define gco2ccl(o)  check_exp((o)->tt == LUA_TCCL, static_cast<CClosure*>(o))
-#define gco2t(o)  check_exp((o)->tt == LUA_TTABLE, static_cast<Table*>(o))
-#define gco2p(o)  check_exp((o)->tt == LUA_TPROTO, static_cast<Proto*>(o))
-#define gco2th(o)  check_exp((o)->tt == LUA_TTHREAD, static_cast<lua_State*>(o))
+#define gco2ts(o) check_exp(novariant((o)->type) == LuaType::Basic::String, static_cast<TString*>(o))
+#define gco2u(o)  check_exp((o)->type == LuaType::Variant::UserData, static_cast<Udata*>(o))
+#define gco2lcl(o)  check_exp((o)->type == LuaType::Variant::LuaFunctionClosure, static_cast<LClosure*>(o))
+#define gco2ccl(o)  check_exp((o)->type == LuaType::Variant::CFunctionClosure, static_cast<CClosure*>(o))
+#define gco2t(o)  check_exp((o)->type == LuaType::Variant::Table, static_cast<Table*>(o))
+#define gco2p(o)  check_exp((o)->type == LuaType::Variant::FunctionPrototype, static_cast<Proto*>(o))
+#define gco2th(o)  check_exp((o)->type == LuaType::Variant::Thread, static_cast<lua_State*>(o))
 
 
 /* macro to convert a Lua object into a GCObject */
 #define obj2gco(v) \
-	check_exp(novariant((v)->tt) < LUA_TDEADKEY, (static_cast<GCObject*>(v)))
+	check_exp(LuaType::DataType(novariant((v)->type)) < LuaType::DataType(LuaType::Variant::DeadKey), (static_cast<GCObject*>(v)))
 
 LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
 LUAI_FUNC CallInfo *luaE_extendCI (lua_State *L);

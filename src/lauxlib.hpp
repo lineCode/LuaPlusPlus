@@ -35,10 +35,11 @@ LUALIB_API void (luaL_checkversion_) (lua_State *L, lua_Number ver, size_t sz);
 #define luaL_checkversion(L)  \
 	  luaL_checkversion_(L, LUA_VERSION_NUM, LUAL_NUMSIZES)
 
-LUALIB_API int (luaL_getmetafield) (lua_State *L, int obj, const char *e);
+LUALIB_API LuaType (luaL_getmetafield) (lua_State *L, int obj, const char *e);
 LUALIB_API int (luaL_callmeta) (lua_State *L, int obj, const char *e);
 LUALIB_API const char *(luaL_tolstring) (lua_State *L, int idx, size_t *len);
-LUALIB_API int (luaL_argerror) (lua_State *L, int arg, const char *extramsg);
+[[noreturn]]
+LUALIB_API bool (luaL_argerror) (lua_State *L, int arg, const char *extramsg);
 LUALIB_API const char *(luaL_checklstring) (lua_State *L, int arg,
                                                           size_t *l);
 LUALIB_API const char *(luaL_optlstring) (lua_State *L, int arg,
@@ -51,7 +52,8 @@ LUALIB_API lua_Integer (luaL_optinteger) (lua_State *L, int arg,
                                           lua_Integer def);
 
 LUALIB_API void (luaL_checkstack) (lua_State *L, int sz, const char *msg);
-LUALIB_API void (luaL_checktype) (lua_State *L, int arg, int t);
+LUALIB_API void (luaL_checktype) (lua_State *L, int arg, LuaType::Basic t);
+LUALIB_API void (luaL_checktype) (lua_State *L, int arg, LuaType::Variant t);
 LUALIB_API void (luaL_checkany) (lua_State *L, int arg);
 
 LUALIB_API int   (luaL_newmetatable) (lua_State *L, const char *tname);
@@ -60,7 +62,8 @@ LUALIB_API void *(luaL_testudata) (lua_State *L, int ud, const char *tname);
 LUALIB_API void *(luaL_checkudata) (lua_State *L, int ud, const char *tname);
 
 LUALIB_API void (luaL_where) (lua_State *L, int lvl);
-LUALIB_API int (luaL_error) (lua_State *L, const char *fmt, ...);
+[[noreturn]]
+LUALIB_API void (luaL_error) (lua_State *L, const char *fmt, ...);
 
 LUALIB_API int (luaL_checkoption) (lua_State *L, int arg, const char *def,
                                    const char *const lst[]);

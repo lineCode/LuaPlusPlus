@@ -21,6 +21,7 @@
 #include <lstring.hpp>
 #include <lundump.hpp>
 #include <lzio.hpp>
+#include <lauxlib.hpp>
 
 
 #if !defined(luai_verifycode)
@@ -112,44 +113,47 @@ static void LoadCode (LoadState *S, Proto *f) {
 }
 
 
-static void LoadFunction(LoadState *S, Proto *f, TString *psource);
+static void LoadFunction(LoadState* S, Proto* f, TString* psource);
 
 
-static void LoadConstants (LoadState *S, Proto *f) {
-  int i;
-  int n = LoadInt(S);
+static void LoadConstants (LoadState* S, Proto* f)
+{
+  const int n = LoadInt(S);
   f->k = LMem<TValue>::luaM_newvector(S->L, n);
   f->sizek = n;
-  for (i = 0; i < n; i++)
+  for (int i = 0; i < n; i++)
     setnilvalue(&f->k[i]);
-  for (i = 0; i < n; i++) {
-    TValue *o = &f->k[i];
-    int t = LoadByte(S);
-    switch (t) {
-    case LUA_TNIL:
-      setnilvalue(o);
-      break;
-    case LUA_TBOOLEAN:
-      setbvalue(o, LoadByte(S));
-      break;
-    case LUA_TNUMFLT:
-      setfltvalue(o, LoadNumber(S));
-      break;
-    case LUA_TNUMINT:
-      setivalue(o, LoadInteger(S));
-      break;
-    case LUA_TSHRSTR:
-    case LUA_TLNGSTR:
-      setsvalue2n(S->L, o, LoadString(S));
-      break;
-    default:
-      lua_assert(0);
+  for (int i = 0; i < n; i++)
+  {
+    TValue* o = &f->k[i];
+    LuaType t = LuaType::fromRaw(S->L, LoadByte(S));
+    switch (t.asVariantStrict())
+    {
+      case LuaType::Variant::Nil:
+        setnilvalue(o);
+        break;
+      case LuaType::Variant::Boolean:
+        setbvalue(o, LoadByte(S));
+        break;
+      case LuaType::Variant::FloatNumber:
+        setfltvalue(o, LoadNumber(S));
+        break;
+      case LuaType::Variant::IntNumber:
+        setivalue(o, LoadInteger(S));
+        break;
+      case LuaType::Variant::ShortString:
+      case LuaType::Variant::LongString:
+        setsvalue2n(S->L, o, LoadString(S));
+        break;
+      default:
+        luaL_error(S->L, "Unknown type: %i.", t.asUnderlying());
     }
   }
 }
 
 
-static void LoadProtos (LoadState *S, Proto *f) {
+static void LoadProtos (LoadState *S, Proto *f)
+{
   int i;
   int n = LoadInt(S);
   f->p = LMem<Proto*>::luaM_newvector(S->L, n);
@@ -199,7 +203,8 @@ static void LoadDebug (LoadState *S, Proto *f) {
 }
 
 
-static void LoadFunction (LoadState *S, Proto *f, TString *psource) {
+static void LoadFunction (LoadState *S, Proto *f, TString *psource)
+{
   f->source = LoadString(S);
   if (f->source == nullptr)  /* no source in dump? */
     f->source = psource;  /* reuse parent's source */

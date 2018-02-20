@@ -21,6 +21,7 @@
 #include <lua.hpp>
 #include <lauxlib.hpp>
 #include <lualib.hpp>
+#include <llimits.hpp>
 
 
 /*
@@ -124,7 +125,7 @@ static int str_rep (lua_State *L) {
   const char *sep = luaL_optlstring(L, 3, "", &lsep);
   if (n <= 0) lua_pushliteral(L, "");
   else if (l + lsep < l || l + lsep > MAXSIZE / n)  /* may overflow? */
-    return luaL_error(L, "resulting string too large");
+    luaL_error(L, "resulting string too large");
   else {
     size_t totallen = (size_t)n * l + (size_t)(n - 1) * lsep;
     luaL_Buffer b;
@@ -153,7 +154,7 @@ static int str_byte (lua_State *L) {
   if (pose > (lua_Integer)l) pose = l;
   if (posi > pose) return 0;  /* empty interval; return no values */
   if (pose - posi >= INT_MAX)  /* arithmetic overflow? */
-    return luaL_error(L, "string slice too long");
+    luaL_error(L, "string slice too long");
   n = (int)(pose -  posi) + 1;
   luaL_checkstack(L, n, "string slice too long");
   for (i=0; i<n; i++)
@@ -187,11 +188,11 @@ static int writer (lua_State *L, const void *b, size_t size, void *B) {
 static int str_dump (lua_State *L) {
   luaL_Buffer b;
   int strip = lua_toboolean(L, 2);
-  luaL_checktype(L, 1, LUA_TFUNCTION);
+  luaL_checktype(L, 1, LuaType::Basic::Function);
   lua_settop(L, 1);
   luaL_buffinit(L,&b);
   if (lua_dump(L, writer, &b, strip) != 0)
-    return luaL_error(L, "unable to dump given function");
+    luaL_error(L, "unable to dump given function");
   luaL_pushresult(&b);
   return 1;
 }
@@ -240,7 +241,7 @@ static const char *match (MatchState *ms, const char *s, const char *p);
 static int check_capture (MatchState *ms, int l) {
   l -= '1';
   if (l < 0 || l >= ms->level || ms->capture[l].len == CAP_UNFINISHED)
-    return luaL_error(ms->L, "invalid capture index %%%d", l + 1);
+    luaL_error(ms->L, "invalid capture index %%%d", l + 1);
   return l;
 }
 
@@ -249,7 +250,7 @@ static int capture_to_close (MatchState *ms) {
   int level = ms->level;
   for (level--; level>=0; level--)
     if (ms->capture[level].len == CAP_UNFINISHED) return level;
-  return luaL_error(ms->L, "invalid pattern capture");
+  luaL_error(ms->L, "invalid pattern capture");
 }
 
 
@@ -596,7 +597,8 @@ static void prepstate (MatchState *ms, lua_State *L,
 }
 
 
-static void reprepstate (MatchState *ms) {
+static void reprepstate (MatchState* ms)
+{
   ms->level = 0;
   lua_assert(ms->matchdepth == MAXCCALLS);
 }
@@ -726,23 +728,27 @@ static void add_s (MatchState *ms, luaL_Buffer *b, const char *s,
 }
 
 
-static void add_value (MatchState *ms, luaL_Buffer *b, const char *s,
-                                       const char *e, int tr) {
+static void add_value (MatchState *ms, luaL_Buffer *b, const char *s, const char *e, LuaType tr)
+{
   lua_State *L = ms->L;
-  switch (tr) {
-    case LUA_TFUNCTION: {
+  switch (tr.asBasicStrict())
+  {
+    case LuaType::Basic::Function:
+    {
       int n;
       lua_pushvalue(L, 3);
       n = push_captures(ms, s, e);
       lua_call(L, n, 1);
       break;
     }
-    case LUA_TTABLE: {
+    case LuaType::Basic::Table:
+    {
       push_onecapture(ms, 0, s, e);
       lua_gettable(L, 3);
       break;
     }
-    default: {  /* LUA_TNUMBER or LUA_TSTRING */
+    default:
+    { /* LUA_TNUMBER or LUA_TSTRING */
       add_s(ms, b, s, e);
       return;
     }
@@ -762,14 +768,14 @@ static int str_gsub (lua_State *L) {
   const char *src = luaL_checklstring(L, 1, &srcl);  /* subject */
   const char *p = luaL_checklstring(L, 2, &lp);  /* pattern */
   const char *lastmatch = nullptr;  /* end of last match */
-  int tr = lua_type(L, 3);  /* replacement type */
+  LuaType tr = lua_type(L, 3);  /* replacement type */
   lua_Integer max_s = luaL_optinteger(L, 4, srcl + 1);  /* max replacements */
   int anchor = (*p == '^');
   lua_Integer n = 0;  /* replacement count */
   MatchState ms;
   luaL_Buffer b;
-  luaL_argcheck(L, tr == LUA_TNUMBER || tr == LUA_TSTRING ||
-                   tr == LUA_TFUNCTION || tr == LUA_TTABLE, 3,
+  luaL_argcheck(L, tr == LuaType::Basic::Number || tr == LuaType::Basic::String ||
+                   tr == LuaType::Basic::Function || tr == LuaType::Basic::Table, 3,
                       "string/function/table expected");
   luaL_buffinit(L, &b);
   if (anchor) {
@@ -939,14 +945,17 @@ static void checkdp (char *buff, int nb) {
 
 
 static void addliteral (lua_State *L, luaL_Buffer *b, int arg) {
-  switch (lua_type(L, arg)) {
-    case LUA_TSTRING: {
+  switch (lua_type(L, arg).asBasicStrict())
+  {
+    case LuaType::Basic::String:
+    {
       size_t len;
       const char *s = lua_tolstring(L, arg, &len);
       addquoted(b, s, len);
       break;
     }
-    case LUA_TNUMBER: {
+    case LuaType::Basic::Number:
+    {
       char *buff = luaL_prepbuffsize(b, MAX_ITEM);
       int nb;
       if (!lua_isinteger(L, arg)) {  /* float? */
@@ -964,14 +973,15 @@ static void addliteral (lua_State *L, luaL_Buffer *b, int arg) {
       luaL_addsize(b, nb);
       break;
     }
-    case LUA_TNIL: case LUA_TBOOLEAN: {
+    case LuaType::Basic::Nil:
+    case LuaType::Basic::Boolean:
+    {
       luaL_tolstring(L, arg, nullptr);
       luaL_addvalue(b);
       break;
     }
-    default: {
+    default:
       luaL_argerror(L, arg, "value has no literal form");
-    }
   }
 }
 
@@ -1077,10 +1087,8 @@ static int str_format (lua_State *L) {
           }
           break;
         }
-        default: {  /* also treat cases 'pnLlh' */
-          return luaL_error(L, "invalid option '%%%c' to 'format'",
-                               *(strfrmt - 1));
-        }
+        default:   /* also treat cases 'pnLlh' */
+          luaL_error(L, "invalid option '%%%c' to 'format'", *(strfrmt - 1));
       }
       lua_assert(nb < MAX_ITEM);
       luaL_addsize(&b, nb);

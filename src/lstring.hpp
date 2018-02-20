@@ -22,13 +22,13 @@
 /*
 ** test whether a string is a reserved word
 */
-#define isreserved(s)	((s)->tt == LUA_TSHRSTR && (s)->extra > 0)
+#define isreserved(s)	((s)->type == LuaType::Variant::ShortString && (s)->extra > 0)
 
 
 /*
 ** equality for short strings, which are always internalized
 */
-#define eqshrstr(a,b)	check_exp((a)->tt == LUA_TSHRSTR, (a) == (b))
+#define eqshrstr(a,b)	check_exp((a)->type == LuaType::Variant::ShortString, (a) == (b))
 
 
 LUAI_FUNC uint32_t luaS_hash (const char *str, size_t l, uint32_t seed);

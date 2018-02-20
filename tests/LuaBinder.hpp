@@ -160,7 +160,7 @@ public:
   {
     static thread_local std::string key;
     luaL_argcheck(L, lua_gettop(L) == argCount, 0, "Wrong number of arguments.");
-    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 1, LuaType::Basic::Table);
 
     key.clear();
     if (const char* result = luaL_checkstring(L, 2))
@@ -238,7 +238,7 @@ private:
     catch (const std::runtime_error& e)
     {
       luaL_traceback(L, L, e.what(), 1);
-      return lua_error(L);
+      lua_error(L);
     }
   }
 
