@@ -140,12 +140,16 @@ ForEach (.compiler in .compilers)
     .buildTypeSpecificCompileOptions = ' /O2' // Maximise speed (Ox is full optimisation, might be tested)
                                      + ' /Ob2' // inline function expansion: any suitable (/OB1 = only inline, /Ob0 = disabled)
                                      + ' /MT' // runtime library: Multithreaded release
-                                     + ' /Gy-' // no function level linking (requred for edit and continue)
                                      + ' /Oi' // enable intrinsic functions (Using intrinsic functions generates faster, but possibly larger code)
                                      + ' /Ot' // favor fast code
+                                     + ' /Gy' // enables function level linking
+                                     + ' /GL' // enables whole program optimization
+                                     + ' /Gw' // package global data in COMDAT sections for optimization (removal of duplicate global data)
     .subsystemOption = 'WINDOWS'
-    .buildTypeSpecificLinkerOptions = ' /DEBUG:fastlink /INCREMENTAL:NO'
-    .buildTypeSpecificLinkerAndLibrarianOptions = '$ltcgIncrementalOption$' // use fast link code generation
+    .buildTypeSpecificLinkerOptions = ' /CGTHREADS:8' // use 8 threads (the current max) instead of the default 4 for LTCG
+                                    + ' /OPT:REF' // remove unused code
+                                    + ' /DEBUG' // creates full debugging information for the .exe
+    .buildTypeSpecificLinkerAndLibrarianOptions = ' /LTCG' // link code generation
     .buildTypeSpecificDefines =
     {
       'NDEBUG',
