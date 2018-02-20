@@ -38,7 +38,7 @@
 ** If expression is a numeric constant, fills 'v' with its value
 ** and returns 1. Otherwise, returns 0.
 */
-static int tonumeral(const expdesc *e, TValue *v) {
+static int tonumeral(const ExpressionDescription *e, TValue *v) {
   if (hasjumps(e))
     return 0;  /* not a numeral */
   switch (e->k) {
@@ -390,7 +390,7 @@ static void freereg (FuncState *fs, int reg) {
 /*
 ** Free register used by expression 'e' (if any)
 */
-static void freeexp (FuncState *fs, expdesc *e) {
+static void freeexp (FuncState *fs, ExpressionDescription *e) {
   if (e->k == VNONRELOC)
     freereg(fs, e->u.info);
 }
@@ -400,7 +400,7 @@ static void freeexp (FuncState *fs, expdesc *e) {
 ** Free registers used by expressions 'e1' and 'e2' (if any) in proper
 ** order.
 */
-static void freeexps (FuncState *fs, expdesc *e1, expdesc *e2) {
+static void freeexps (FuncState *fs, ExpressionDescription *e1, ExpressionDescription *e2) {
   int r1 = (e1->k == VNONRELOC) ? e1->u.info : -1;
   int r2 = (e2->k == VNONRELOC) ? e2->u.info : -1;
   if (r1 > r2) {
@@ -508,7 +508,7 @@ static int nilK (FuncState *fs) {
 ** Either 'e' is a multi-ret expression (function call or vararg)
 ** or 'nresults' is LUA_MULTRET (as any expression can satisfy that).
 */
-void luaK_setreturns (FuncState *fs, expdesc *e, int nresults) {
+void luaK_setreturns (FuncState *fs, ExpressionDescription *e, int nresults) {
   if (e->k == VCALL) {  /* expression is an open function call? */
     SETARG_C(getinstruction(fs, e), nresults + 1);
   }
@@ -532,7 +532,7 @@ void luaK_setreturns (FuncState *fs, expdesc *e, int nresults) {
 ** (Calls are created returning one result, so that does not need
 ** to be fixed.)
 */
-void luaK_setoneret (FuncState *fs, expdesc *e) {
+void luaK_setoneret (FuncState *fs, ExpressionDescription *e) {
   if (e->k == VCALL) {  /* expression is an open function call? */
     /* already returns 1 value */
     lua_assert(GETARG_C(getinstruction(fs, e)) == 2);
@@ -549,7 +549,7 @@ void luaK_setoneret (FuncState *fs, expdesc *e) {
 /*
 ** Ensure that expression 'e' is not a variable.
 */
-void luaK_dischargevars (FuncState *fs, expdesc *e) {
+void luaK_dischargevars (FuncState *fs, ExpressionDescription *e) {
   switch (e->k) {
     case VLOCAL: {  /* already in a register */
       e->k = VNONRELOC;  /* becomes a non-relocatable value */
@@ -588,7 +588,7 @@ void luaK_dischargevars (FuncState *fs, expdesc *e) {
 ** Ensures expression value is in register 'reg' (and therefore
 ** 'e' will become a non-relocatable expression).
 */
-static void discharge2reg (FuncState *fs, expdesc *e, int reg) {
+static void discharge2reg (FuncState *fs, ExpressionDescription *e, int reg) {
   luaK_dischargevars(fs, e);
   switch (e->k) {
     case VNIL: {
@@ -634,7 +634,7 @@ static void discharge2reg (FuncState *fs, expdesc *e, int reg) {
 /*
 ** Ensures expression value is in any register.
 */
-static void discharge2anyreg (FuncState *fs, expdesc *e) {
+static void discharge2anyreg (FuncState *fs, ExpressionDescription *e) {
   if (e->k != VNONRELOC) {  /* no fixed register yet? */
     luaK_reserveregs(fs, 1);  /* get a register */
     discharge2reg(fs, e, fs->freereg-1);  /* put value there */
@@ -668,7 +668,7 @@ static int need_value (FuncState *fs, int list) {
 ** its final position or to "load" instructions (for those tests
 ** that do not produce values).
 */
-static void exp2reg (FuncState *fs, expdesc *e, int reg) {
+static void exp2reg (FuncState *fs, ExpressionDescription *e, int reg) {
   discharge2reg(fs, e, reg);
   if (e->k == VJMP)  /* expression itself is a test? */
     luaK_concat(fs, &e->t, e->u.info);  /* put this jump in 't' list */
@@ -696,7 +696,7 @@ static void exp2reg (FuncState *fs, expdesc *e, int reg) {
 ** Ensures final expression result (including results from its jump
 ** lists) is in next available register.
 */
-void luaK_exp2nextreg (FuncState *fs, expdesc *e) {
+void luaK_exp2nextreg (FuncState *fs, ExpressionDescription *e) {
   luaK_dischargevars(fs, e);
   freeexp(fs, e);
   luaK_reserveregs(fs, 1);
@@ -708,7 +708,7 @@ void luaK_exp2nextreg (FuncState *fs, expdesc *e) {
 ** Ensures final expression result (including results from its jump
 ** lists) is in some (any) register and return that register.
 */
-int luaK_exp2anyreg (FuncState *fs, expdesc *e) {
+int luaK_exp2anyreg (FuncState *fs, ExpressionDescription *e) {
   luaK_dischargevars(fs, e);
   if (e->k == VNONRELOC) {  /* expression already has a register? */
     if (!hasjumps(e))  /* no jumps? */
@@ -727,7 +727,7 @@ int luaK_exp2anyreg (FuncState *fs, expdesc *e) {
 ** Ensures final expression result is either in a register or in an
 ** upvalue.
 */
-void luaK_exp2anyregup (FuncState *fs, expdesc *e) {
+void luaK_exp2anyregup (FuncState *fs, ExpressionDescription *e) {
   if (e->k != VUPVAL || hasjumps(e))
     luaK_exp2anyreg(fs, e);
 }
@@ -737,7 +737,7 @@ void luaK_exp2anyregup (FuncState *fs, expdesc *e) {
 ** Ensures final expression result is either in a register or it is
 ** a constant.
 */
-void luaK_exp2val (FuncState *fs, expdesc *e) {
+void luaK_exp2val (FuncState *fs, ExpressionDescription *e) {
   if (hasjumps(e))
     luaK_exp2anyreg(fs, e);
   else
@@ -751,7 +751,7 @@ void luaK_exp2val (FuncState *fs, expdesc *e) {
 ** in the range of R/K indices).
 ** Returns R/K index.
 */
-int luaK_exp2RK (FuncState *fs, expdesc *e) {
+int luaK_exp2RK (FuncState *fs, ExpressionDescription *e) {
   luaK_exp2val(fs, e);
   switch (e->k) {  /* move constants to 'k' */
     case VTRUE: e->u.info = boolK(fs, 1); goto vk;
@@ -775,7 +775,7 @@ int luaK_exp2RK (FuncState *fs, expdesc *e) {
 /*
 ** Generate code to store result of expression 'ex' into variable 'var'.
 */
-void luaK_storevar (FuncState *fs, expdesc *var, expdesc *ex) {
+void luaK_storevar (FuncState *fs, ExpressionDescription *var, ExpressionDescription *ex) {
   switch (var->k) {
     case VLOCAL: {
       freeexp(fs, ex);
@@ -802,7 +802,7 @@ void luaK_storevar (FuncState *fs, expdesc *var, expdesc *ex) {
 /*
 ** Emit SELF instruction (convert expression 'e' into 'e:key(e,').
 */
-void luaK_self (FuncState *fs, expdesc *e, expdesc *key) {
+void luaK_self (FuncState *fs, ExpressionDescription *e, ExpressionDescription *key) {
   int ereg;
   luaK_exp2anyreg(fs, e);
   ereg = e->u.info;  /* register where 'e' was placed */
@@ -818,7 +818,7 @@ void luaK_self (FuncState *fs, expdesc *e, expdesc *key) {
 /*
 ** Negate condition 'e' (where 'e' is a comparison).
 */
-static void negatecondition (FuncState *fs, expdesc *e) {
+static void negatecondition (FuncState *fs, ExpressionDescription *e) {
   Instruction *pc = getjumpcontrol(fs, e->u.info);
   lua_assert(testTMode(GET_OPCODE(*pc)) && GET_OPCODE(*pc) != OP_TESTSET &&
                                            GET_OPCODE(*pc) != OP_TEST);
@@ -832,7 +832,7 @@ static void negatecondition (FuncState *fs, expdesc *e) {
 ** Optimize when 'e' is 'not' something, inverting the condition
 ** and removing the 'not'.
 */
-static int jumponcond (FuncState *fs, expdesc *e, int cond) {
+static int jumponcond (FuncState *fs, ExpressionDescription *e, int cond) {
   if (e->k == VRELOCABLE) {
     Instruction ie = getinstruction(fs, e);
     if (GET_OPCODE(ie) == OP_NOT) {
@@ -850,7 +850,7 @@ static int jumponcond (FuncState *fs, expdesc *e, int cond) {
 /*
 ** Emit code to go through if 'e' is true, jump otherwise.
 */
-void luaK_goiftrue (FuncState *fs, expdesc *e) {
+void luaK_goiftrue (FuncState *fs, ExpressionDescription *e) {
   int pc;  /* pc of new jump */
   luaK_dischargevars(fs, e);
   switch (e->k) {
@@ -877,7 +877,7 @@ void luaK_goiftrue (FuncState *fs, expdesc *e) {
 /*
 ** Emit code to go through if 'e' is false, jump otherwise.
 */
-void luaK_goiffalse (FuncState *fs, expdesc *e) {
+void luaK_goiffalse (FuncState *fs, ExpressionDescription *e) {
   int pc;  /* pc of new jump */
   luaK_dischargevars(fs, e);
   switch (e->k) {
@@ -903,7 +903,7 @@ void luaK_goiffalse (FuncState *fs, expdesc *e) {
 /*
 ** Code 'not e', doing constant folding.
 */
-static void codenot (FuncState *fs, expdesc *e) {
+static void codenot (FuncState *fs, ExpressionDescription *e) {
   luaK_dischargevars(fs, e);
   switch (e->k) {
     case VNIL: case VFALSE: {
@@ -939,7 +939,7 @@ static void codenot (FuncState *fs, expdesc *e) {
 ** Create expression 't[k]'. 't' must have its final result already in a
 ** register or upvalue.
 */
-void luaK_indexed (FuncState *fs, expdesc *t, expdesc *k) {
+void luaK_indexed (FuncState *fs, ExpressionDescription *t, ExpressionDescription *k) {
   lua_assert(!hasjumps(t) && (vkisinreg(t->k) || t->k == VUPVAL));
   t->u.ind.t = t->u.info;  /* register or upvalue index */
   t->u.ind.idx = luaK_exp2RK(fs, k);  /* R/K index for key */
@@ -971,8 +971,8 @@ static int validop (int op, TValue *v1, TValue *v2) {
 ** Try to "constant-fold" an operation; return 1 iff successful.
 ** (In this case, 'e1' has the final result.)
 */
-static int constfolding (FuncState *fs, int op, expdesc *e1,
-                                                const expdesc *e2) {
+static int constfolding (FuncState *fs, int op, ExpressionDescription *e1,
+                                                const ExpressionDescription *e2) {
   TValue v1, v2, res;
   if (!tonumeral(e1, &v1) || !tonumeral(e2, &v2) || !validop(op, &v1, &v2))
     return 0;  /* non-numeric operands or not safe to fold */
@@ -997,7 +997,7 @@ static int constfolding (FuncState *fs, int op, expdesc *e1,
 ** (everything but 'not').
 ** Expression to produce final result will be encoded in 'e'.
 */
-static void codeunexpval (FuncState *fs, OpCode op, expdesc *e, int line) {
+static void codeunexpval (FuncState *fs, OpCode op, ExpressionDescription *e, int line) {
   int r = luaK_exp2anyreg(fs, e);  /* opcodes operate only on registers */
   freeexp(fs, e);
   e->u.info = luaK_codeABC(fs, op, 0, r, 0);  /* generate opcode */
@@ -1016,7 +1016,7 @@ static void codeunexpval (FuncState *fs, OpCode op, expdesc *e, int line) {
 ** recent registers to be released).
 */
 static void codebinexpval (FuncState *fs, OpCode op,
-                           expdesc *e1, expdesc *e2, int line) {
+                           ExpressionDescription *e1, ExpressionDescription *e2, int line) {
   int rk2 = luaK_exp2RK(fs, e2);  /* both operands are "RK" */
   int rk1 = luaK_exp2RK(fs, e1);
   freeexps(fs, e1, e2);
@@ -1030,7 +1030,7 @@ static void codebinexpval (FuncState *fs, OpCode op,
 ** Emit code for comparisons.
 ** 'e1' was already put in R/K form by 'luaK_infix'.
 */
-static void codecomp (FuncState *fs, BinOpr opr, expdesc *e1, expdesc *e2) {
+static void codecomp (FuncState *fs, BinOpr opr, ExpressionDescription *e1, ExpressionDescription *e2) {
   int rk1 = (e1->k == VK) ? RKASK(e1->u.info)
                           : check_exp(e1->k == VNONRELOC, e1->u.info);
   int rk2 = luaK_exp2RK(fs, e2);
@@ -1059,8 +1059,8 @@ static void codecomp (FuncState *fs, BinOpr opr, expdesc *e1, expdesc *e2) {
 /*
 ** Aplly prefix operation 'op' to expression 'e'.
 */
-void luaK_prefix (FuncState *fs, UnOpr op, expdesc *e, int line) {
-  static const expdesc ef = {VKINT, {0}, NO_JUMP, NO_JUMP};
+void luaK_prefix (FuncState *fs, UnOpr op, ExpressionDescription *e, int line) {
+  static const ExpressionDescription ef = {VKINT, {0}, NO_JUMP, NO_JUMP};
   switch (op) {
     case OPR_MINUS: case OPR_BNOT:  /* use 'ef' as fake 2nd operand */
       if (constfolding(fs, op + LUA_OPUNM, e, &ef))
@@ -1079,7 +1079,7 @@ void luaK_prefix (FuncState *fs, UnOpr op, expdesc *e, int line) {
 ** Process 1st operand 'v' of binary operation 'op' before reading
 ** 2nd operand.
 */
-void luaK_infix (FuncState *fs, BinOpr op, expdesc *v) {
+void luaK_infix (FuncState *fs, BinOpr op, ExpressionDescription *v) {
   switch (op) {
     case OPR_AND: {
       luaK_goiftrue(fs, v);  /* go ahead only if 'v' is true */
@@ -1118,7 +1118,7 @@ void luaK_infix (FuncState *fs, BinOpr op, expdesc *v) {
 ** one.
 */
 void luaK_posfix (FuncState *fs, BinOpr op,
-                  expdesc *e1, expdesc *e2, int line) {
+                  ExpressionDescription *e1, ExpressionDescription *e2, int line) {
   switch (op) {
     case OPR_AND: {
       lua_assert(e1->t == NO_JUMP);  /* list closed by 'luK_infix' */

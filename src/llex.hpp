@@ -55,26 +55,28 @@ struct Token
 
 /* state of the lexer plus state of the parser when shared by all
    functions */
-typedef struct LexState {
-  int current;  /* current character (charint) */
-  int linenumber;  /* input line counter */
-  int lastline;  /* line of last token 'consumed' */
+struct LexState
+{
+  LexState(ZIO& z) : z(z) {}
+
+  int current = 0;  /* current character (charint) */
+  int linenumber = 0;  /* input line counter */
+  int lastline = 0;  /* line of last token 'consumed' */
   Token t;  /* current token */
   Token lookahead;  /* look ahead token */
-  struct FuncState *fs;  /* current function (parser) */
-  class lua_State *L;
-  ZIO *z;  /* input stream */
-  Mbuffer *buff;  /* buffer for tokens */
-  Table *h;  /* to avoid collection/reuse strings */
-  struct Dyndata *dyd;  /* dynamic structures used by the parser */
-  TString *source;  /* current source name */
-  TString *envn;  /* environment variable name */
-} LexState;
+  struct FuncState* fs = nullptr;  /* current function (parser) */
+  class lua_State* L = nullptr;
+  ZIO& z;  /* input stream */
+  Mbuffer* buff = nullptr;  /* buffer for tokens */
+  Table* h = nullptr;  /* to avoid collection/reuse strings */
+  struct Dyndata* dyd = nullptr;  /* dynamic structures used by the parser */
+  TString* source = nullptr;  /* current source name */
+  TString* envn = nullptr;  /* environment variable name */
+};
 
 
 LUAI_FUNC void luaX_init (lua_State *L);
-LUAI_FUNC void luaX_setinput (lua_State *L, LexState *ls, ZIO *z,
-                              TString *source, int firstchar);
+LUAI_FUNC void luaX_setinput (lua_State *L, LexState *ls, TString *source, int firstchar);
 LUAI_FUNC TString *luaX_newstring (LexState *ls, const char *str, size_t l);
 LUAI_FUNC void luaX_next (LexState *ls);
 LUAI_FUNC int luaX_lookahead (LexState *ls);

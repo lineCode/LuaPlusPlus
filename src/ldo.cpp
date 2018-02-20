@@ -725,12 +725,15 @@ int luaD_pcall (lua_State *L, Pfunc func, void *u,
 /*
 ** Execute a protected parser.
 */
-struct SParser {  /* data to 'f_parser' */
-  ZIO *z;
+struct SParser
+{ /* data to 'f_parser' */
+  SParser(ZIO& z) : z(z) {}
+
+  ZIO& z;
   Mbuffer buff;  /* dynamic structure used by the scanner */
   Dyndata dyd;  /* dynamic structures used by the parser */
-  const char *mode;
-  const char *name;
+  const char *mode = nullptr;
+  const char *name = nullptr;
 };
 
 
@@ -743,9 +746,10 @@ static void checkmode (lua_State *L, const char *mode, const char *x)
 }
 
 
-static void f_parser (lua_State *L, void *ud) {
-  LClosure *cl;
-  struct SParser *p = cast(struct SParser *, ud);
+static void f_parser (lua_State *L, void *ud)
+{
+  LClosure* cl;
+  struct SParser* p = cast(struct SParser *, ud);
   int c = zgetc(p->z);  /* read first character */
   if (c == LUA_SIGNATURE[0]) {
     checkmode(L, p->mode, "binary");
@@ -753,29 +757,25 @@ static void f_parser (lua_State *L, void *ud) {
   }
   else {
     checkmode(L, p->mode, "text");
-    cl = luaY_parser(L, p->z, &p->buff, &p->dyd, p->name, c);
+    cl = luaY_parser(L, p->z, p->buff, p->dyd, p->name, c);
   }
   lua_assert(cl->nupvalues == cl->p->sizeupvalues);
   luaF_initupvals(L, cl);
 }
 
 
-int luaD_protectedparser (lua_State *L, ZIO *z, const char *name,
+int luaD_protectedparser (lua_State *L, ZIO& z, const char *name,
                                         const char *mode) {
-  struct SParser p;
-  int status;
+  struct SParser p(z);
   L->nny++;  /* cannot yield during parsing */
-  p.z = z; p.name = name; p.mode = mode;
-  p.dyd.actvar.arr = nullptr; p.dyd.actvar.size = 0;
-  p.dyd.gt.arr = nullptr; p.dyd.gt.size = 0;
-  p.dyd.label.arr = nullptr; p.dyd.label.size = 0;
-  luaZ_initbuffer(L, &p.buff);
-  status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errfunc);
+  p.name = name;
+  p.mode = mode;
+  int status = luaD_pcall(L, f_parser, &p, savestack(L, L->top), L->errfunc);
   p.buff.buffer = LMem<char>::luaM_reallocvchar(L, p.buff.buffer, p.buff.buffsize, 0);
   p.buff.buffsize = 0;
   LMem<Vardesc>::luaM_freearray(L, p.dyd.actvar.arr, p.dyd.actvar.size);
-  LMem<Labeldesc>::luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
-  LMem<Labeldesc>::luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
+  LMem<LabelDescription>::luaM_freearray(L, p.dyd.gt.arr, p.dyd.gt.size);
+  LMem<LabelDescription>::luaM_freearray(L, p.dyd.label.arr, p.dyd.label.size);
   L->nny--;
   return status;
 }

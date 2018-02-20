@@ -29,17 +29,23 @@
 #endif
 
 
-typedef struct {
-  lua_State *L;
-  ZIO *Z;
-  const char *name;
-} LoadState;
-
-
-static void error(LoadState *S, const char* why)
+struct LoadState
 {
-  const char* what = luaO_pushfstring(S->L, "%s: %s precompiled chunk", S->name, why);
-  luaD_throw(S->L, LUA_ERRSYNTAX, what);
+  LoadState(lua_State* L, ZIO& z, const char* name)
+    : L(L)
+    , Z(z)
+    , name(name)
+  {}
+  lua_State* L;
+  ZIO& Z;
+  const char* name;
+};
+
+
+static void error(LoadState& S, const char* why)
+{
+  const char* what = luaO_pushfstring(S.L, "%s: %s precompiled chunk", S.name, why);
+  luaD_throw(S.L, LUA_ERRSYNTAX, what);
 }
 
 
@@ -49,8 +55,9 @@ static void error(LoadState *S, const char* why)
 */
 #define LoadVector(S,b,n)	LoadBlock(S,b,(n)*sizeof((b)[0]))
 
-static void LoadBlock (LoadState *S, void *b, size_t size) {
-  if (luaZ_read(S->Z, b, size) != 0)
+static void LoadBlock (LoadState& S, void* b, size_t size)
+{
+  if (luaZ_read(S.Z, b, size) != 0)
     error(S, "truncated");
 }
 
@@ -58,35 +65,37 @@ static void LoadBlock (LoadState *S, void *b, size_t size) {
 #define LoadVar(S,x)		LoadVector(S,&x,1)
 
 
-static uint8_t LoadByte (LoadState *S) {
+static uint8_t LoadByte (LoadState& S) {
   uint8_t x;
   LoadVar(S, x);
   return x;
 }
 
 
-static int LoadInt (LoadState *S) {
+static int LoadInt (LoadState& S) {
   int x;
   LoadVar(S, x);
   return x;
 }
 
 
-static lua_Number LoadNumber (LoadState *S) {
+static lua_Number LoadNumber (LoadState& S) {
   lua_Number x;
   LoadVar(S, x);
   return x;
 }
 
 
-static lua_Integer LoadInteger (LoadState *S) {
+static lua_Integer LoadInteger (LoadState& S)
+{
   lua_Integer x;
   LoadVar(S, x);
   return x;
 }
 
 
-static TString *LoadString (LoadState *S) {
+static TString *LoadString (LoadState& S)
+{
   size_t size = LoadByte(S);
   if (size == 0xFF)
     LoadVar(S, size);
@@ -95,38 +104,39 @@ static TString *LoadString (LoadState *S) {
   else if (--size <= LUAI_MAXSHORTLEN) {  /* short string? */
     char buff[LUAI_MAXSHORTLEN];
     LoadVector(S, buff, size);
-    return luaS_newlstr(S->L, buff, size);
+    return luaS_newlstr(S.L, buff, size);
   }
   else {  /* long string */
-    TString *ts = luaS_createlngstrobj(S->L, size);
+    TString *ts = luaS_createlngstrobj(S.L, size);
     LoadVector(S, getstr(ts), size);  /* load directly in final place */
     return ts;
   }
 }
 
 
-static void LoadCode (LoadState *S, Proto *f) {
+static void LoadCode (LoadState& S, Proto *f)
+{
   int n = LoadInt(S);
-  f->code = LMem<Instruction>::luaM_newvector(S->L, n);
+  f->code = LMem<Instruction>::luaM_newvector(S.L, n);
   f->sizecode = n;
   LoadVector(S, f->code, n);
 }
 
 
-static void LoadFunction(LoadState* S, Proto* f, TString* psource);
+static void LoadFunction(LoadState& S, Proto* f, TString* psource);
 
 
-static void LoadConstants (LoadState* S, Proto* f)
+static void LoadConstants (LoadState& S, Proto* f)
 {
   const int n = LoadInt(S);
-  f->k = LMem<TValue>::luaM_newvector(S->L, n);
+  f->k = LMem<TValue>::luaM_newvector(S.L, n);
   f->sizek = n;
   for (int i = 0; i < n; i++)
     setnilvalue(&f->k[i]);
   for (int i = 0; i < n; i++)
   {
     TValue* o = &f->k[i];
-    LuaType t = LuaType::fromRaw(S->L, LoadByte(S));
+    LuaType t = LuaType::fromRaw(S.L, LoadByte(S));
     switch (t.asVariantStrict())
     {
       case LuaType::Variant::Nil:
@@ -143,52 +153,54 @@ static void LoadConstants (LoadState* S, Proto* f)
         break;
       case LuaType::Variant::ShortString:
       case LuaType::Variant::LongString:
-        setsvalue2n(S->L, o, LoadString(S));
+        setsvalue2n(S.L, o, LoadString(S));
         break;
       default:
-        luaL_error(S->L, "Unknown type: %i.", t.asUnderlying());
+        luaL_error(S.L, "Unknown type: %i.", t.asUnderlying());
     }
   }
 }
 
 
-static void LoadProtos (LoadState *S, Proto *f)
+static void LoadProtos (LoadState& S, Proto *f)
 {
-  int i;
   int n = LoadInt(S);
-  f->p = LMem<Proto*>::luaM_newvector(S->L, n);
+  f->p = LMem<Proto*>::luaM_newvector(S.L, n);
   f->sizep = n;
-  for (i = 0; i < n; i++)
+  for (int i = 0; i < n; i++)
     f->p[i] = nullptr;
-  for (i = 0; i < n; i++) {
-    f->p[i] = luaF_newproto(S->L);
+  for (int i = 0; i < n; i++)
+  {
+    f->p[i] = luaF_newproto(S.L);
     LoadFunction(S, f->p[i], f->source);
   }
 }
 
 
-static void LoadUpvalues (LoadState *S, Proto *f) {
-  int i, n;
-  n = LoadInt(S);
-  f->upvalues = LMem<Upvaldesc>::luaM_newvector(S->L, n);
+static void LoadUpvalues (LoadState& S, Proto *f)
+{
+  int n = LoadInt(S);
+  f->upvalues = LMem<Upvaldesc>::luaM_newvector(S.L, n);
   f->sizeupvalues = n;
-  for (i = 0; i < n; i++)
+  for (int i = 0; i < n; i++)
     f->upvalues[i].name = nullptr;
-  for (i = 0; i < n; i++) {
+  for (int i = 0; i < n; i++)
+  {
     f->upvalues[i].instack = LoadByte(S);
     f->upvalues[i].idx = LoadByte(S);
   }
 }
 
 
-static void LoadDebug (LoadState *S, Proto *f) {
+static void LoadDebug (LoadState& S, Proto *f)
+{
   int i, n;
   n = LoadInt(S);
-  f->lineinfo = LMem<int>::luaM_newvector(S->L, n);
+  f->lineinfo = LMem<int>::luaM_newvector(S.L, n);
   f->sizelineinfo = n;
   LoadVector(S, f->lineinfo, n);
   n = LoadInt(S);
-  f->locvars = LMem<LocVar>::luaM_newvector(S->L, n);
+  f->locvars = LMem<LocVar>::luaM_newvector(S.L, n);
   f->sizelocvars = n;
   for (i = 0; i < n; i++)
     f->locvars[i].varname = nullptr;
@@ -203,7 +215,7 @@ static void LoadDebug (LoadState *S, Proto *f) {
 }
 
 
-static void LoadFunction (LoadState *S, Proto *f, TString *psource)
+static void LoadFunction (LoadState& S, Proto *f, TString *psource)
 {
   f->source = LoadString(S);
   if (f->source == nullptr)  /* no source in dump? */
@@ -221,7 +233,7 @@ static void LoadFunction (LoadState *S, Proto *f, TString *psource)
 }
 
 
-static void checkliteral (LoadState *S, const char *s, const char *msg) {
+static void checkliteral (LoadState& S, const char *s, const char *msg) {
   char buff[sizeof(LUA_SIGNATURE) + sizeof(LUAC_DATA)]; /* larger than both */
   size_t len = strlen(s);
   LoadVector(S, buff, len);
@@ -230,15 +242,16 @@ static void checkliteral (LoadState *S, const char *s, const char *msg) {
 }
 
 
-static void fchecksize (LoadState *S, size_t size, const char *tname) {
+static void fchecksize (LoadState& S, size_t size, const char *tname) {
   if (LoadByte(S) != size)
-    error(S, luaO_pushfstring(S->L, "%s size mismatch in", tname));
+    error(S, luaO_pushfstring(S.L, "%s size mismatch in", tname));
 }
 
 
 #define checksize(S,t)	fchecksize(S,sizeof(t),#t)
 
-static void checkHeader (LoadState *S) {
+static void checkHeader (LoadState& S)
+{
   checkliteral(S, LUA_SIGNATURE + 1, "not a");  /* 1st char already checked */
   if (LoadByte(S) != LUAC_VERSION)
     error(S, "version mismatch in");
@@ -260,23 +273,20 @@ static void checkHeader (LoadState *S) {
 /*
 ** load precompiled chunk
 */
-LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name) {
-  LoadState S;
+LClosure* luaU_undump(lua_State* L, ZIO& Z, const char* name)
+{
   LClosure *cl;
   if (*name == '@' || *name == '=')
-    S.name = name + 1;
+    name = name + 1;
   else if (*name == LUA_SIGNATURE[0])
-    S.name = "binary string";
-  else
-    S.name = name;
-  S.L = L;
-  S.Z = Z;
-  checkHeader(&S);
-  cl = luaF_newLclosure(L, LoadByte(&S));
+    name = "binary string";
+  LoadState S(L, Z, name);
+  checkHeader(S);
+  cl = luaF_newLclosure(L, LoadByte(S));
   setclLvalue(L, L->top, cl);
   luaD_inctop(L);
   cl->p = luaF_newproto(L);
-  LoadFunction(&S, cl->p, nullptr);
+  LoadFunction(S, cl->p, nullptr);
   lua_assert(cl->nupvalues == cl->p->sizeupvalues);
   luai_verifycode(L, buff, cl->p);
   return cl;

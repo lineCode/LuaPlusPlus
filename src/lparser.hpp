@@ -20,9 +20,10 @@
 */
 
 /* kinds of variables/expressions */
-typedef enum {
+enum ExpType
+{
   VVOID,  /* when 'expdesc' describes the last expression a list,
-             this kind means an empty list (so, no expression) */
+            this kind means an empty list (so, no expression) */
   VNIL,  /* constant nil */
   VTRUE,  /* constant true */
   VFALSE,  /* constant false */
@@ -30,27 +31,28 @@ typedef enum {
   VKFLT,  /* floating constant; nval = numerical float value */
   VKINT,  /* integer constant; nval = numerical integer value */
   VNONRELOC,  /* expression has its value in a fixed register;
-                 info = result register */
+                info = result register */
   VLOCAL,  /* local variable; info = local register */
   VUPVAL,  /* upvalue variable; info = index of upvalue in 'upvalues' */
   VINDEXED,  /* indexed variable;
-                ind.vt = whether 't' is register or upvalue;
-                ind.t = table register or upvalue;
-                ind.idx = key's R/K index */
+               ind.vt = whether 't' is register or upvalue;
+               ind.t = table register or upvalue;
+               ind.idx = key's R/K index */
   VJMP,  /* expression is a test/comparison;
-            info = pc of corresponding jump instruction */
+           info = pc of corresponding jump instruction */
   VRELOCABLE,  /* expression can put result in any register;
-                  info = instruction pc */
+                 info = instruction pc */
   VCALL,  /* expression is a function call; info = instruction pc */
   VVARARG  /* vararg expression; info = instruction pc */
-} expkind;
+};
 
 
 #define vkisvar(k)	(VLOCAL <= (k) && (k) <= VINDEXED)
 #define vkisinreg(k)	((k) == VNONRELOC || (k) == VLOCAL)
 
-typedef struct expdesc {
-  expkind k;
+struct ExpressionDescription
+{
+  ExpType k;
   union {
     lua_Integer ival;    /* for VKINT */
     lua_Number nval;  /* for VKFLT */
@@ -63,7 +65,7 @@ typedef struct expdesc {
   } u;
   int t;  /* patch list of 'exit when true' */
   int f;  /* patch list of 'exit when false' */
-} expdesc;
+};
 
 
 /* description of active local variable */
@@ -73,32 +75,36 @@ typedef struct Vardesc {
 
 
 /* description of pending goto statements and label statements */
-typedef struct Labeldesc {
+struct LabelDescription
+{
   TString *name;  /* label identifier */
   int pc;  /* position in code */
   int line;  /* line where it appeared */
   uint8_t nactvar;  /* local level where it appears in current block */
-} Labeldesc;
+};
 
 
 /* list of labels or gotos */
-typedef struct Labellist {
-  Labeldesc *arr;  /* array */
-  int n;  /* number of entries in use */
-  int size;  /* array size */
-} Labellist;
+struct Labellist
+{
+  LabelDescription* arr = nullptr;  /* array */
+  int n = 0;  /* number of entries in use */
+  int size = 0;  /* array size */
+};
 
 
 /* dynamic structures used by the parser */
-typedef struct Dyndata {
-  struct {  /* list of active local variables */
-    Vardesc *arr;
-    int n;
-    int size;
+struct Dyndata
+{
+  struct
+  { /* list of active local variables */
+    Vardesc* arr = nullptr;
+    int n = 0;
+    int size = 0;
   } actvar;
   Labellist gt;  /* list of pending gotos */
   Labellist label;   /* list of active labels */
-} Dyndata;
+};
 
 
 /* control of blocks */
@@ -124,5 +130,5 @@ typedef struct FuncState {
 } FuncState;
 
 
-LUAI_FUNC LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff,
-                                 Dyndata *dyd, const char *name, int firstchar);
+LUAI_FUNC LClosure *luaY_parser (lua_State *L, ZIO& z, Mbuffer& buff,
+                                 Dyndata& dyd, const char *name, int firstchar);
