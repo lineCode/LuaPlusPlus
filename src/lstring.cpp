@@ -47,7 +47,8 @@ int luaS_eqlngstr (TString *a, TString *b)
 }
 
 
-uint32_t luaS_hash (const char *str, size_t l, uint32_t seed) {
+uint32_t luaS_hash (const char *str, size_t l, uint32_t seed)
+{
   uint32_t h = seed ^ cast(uint32_t, l);
   size_t step = (l >> LUAI_HASHLIMIT) + 1;
   for (; l >= step; l -= step)
@@ -56,7 +57,8 @@ uint32_t luaS_hash (const char *str, size_t l, uint32_t seed) {
 }
 
 
-uint32_t luaS_hashlongstr (TString *ts) {
+uint32_t luaS_hashlongstr (TString *ts)
+{
   lua_assert(ts->type == LuaType::Variant::LongString);
   if (ts->extra == 0) {  /* no hash? */
     ts->hash = luaS_hash(getstr(ts), ts->u.lnglen, ts->hash);
@@ -102,7 +104,8 @@ void luaS_resize (lua_State *L, int newsize)
 ** Clear API string cache. (Entries cannot be empty, so fill them with
 ** a non-collectable string.)
 */
-void luaS_clearcache (global_State *g) {
+void luaS_clearcache (global_State *g)
+{
   int i, j;
   for (i = 0; i < STRCACHE_N; i++)
     for (j = 0; j < STRCACHE_M; j++) {
@@ -115,7 +118,8 @@ void luaS_clearcache (global_State *g) {
 /*
 ** Initialize the string table and the string cache
 */
-void luaS_init (lua_State *L) {
+void luaS_init (lua_State *L)
+{
   global_State *g = L->globalState;
   int i, j;
   luaS_resize(L, MINSTRTABSIZE);  /* initial size of string table */
@@ -150,7 +154,8 @@ TString *luaS_createlngstrobj (lua_State *L, size_t l)
 }
 
 
-void luaS_remove (lua_State *L, TString *ts) {
+void luaS_remove (lua_State *L, TString *ts)
+{
   Stringtable *tb = &L->globalState->strt;
   TString **p = &tb->hash[lmod(ts->hash, tb->size)];
   while (*p != ts)  /* find previous element */

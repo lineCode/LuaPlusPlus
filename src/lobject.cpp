@@ -40,6 +40,7 @@ Udata::~Udata() = default;
 Proto::~Proto()
 {
   lua_State* L = LGCFactory::getActiveState();
+
   LMem<Instruction>::luaM_freearray(L, this->code, this->sizecode);
   LMem<Proto*>::luaM_freearray(L, this->p, this->sizep);
   LMem<TValue>::luaM_freearray(L, this->k, this->sizek);

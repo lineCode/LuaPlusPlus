@@ -6,6 +6,7 @@
 */
 
 #include <llimits.hpp>
+#include <array>
 
 
 /*===========================================================================
@@ -33,20 +34,20 @@ enum OpMode : uint8_t {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 /*
 ** size and position of opcode arguments.
 */
-#define SIZE_C		9
-#define SIZE_B		9
-#define SIZE_Bx		(SIZE_C + SIZE_B)
-#define SIZE_A		8
-#define SIZE_Ax		(SIZE_C + SIZE_B + SIZE_A)
+static constexpr int32_t SIZE_C = 9;
+static constexpr int32_t SIZE_B = 9;
+static constexpr int32_t SIZE_Bx = SIZE_C + SIZE_B;
+static constexpr int32_t SIZE_A = 8;
+static constexpr int32_t SIZE_Ax = SIZE_C + SIZE_B + SIZE_A;
 
-#define SIZE_OP		6
+static constexpr int32_t  SIZE_OP = 6;
 
-#define POS_OP		0
-#define POS_A		(POS_OP + SIZE_OP)
-#define POS_C		(POS_A + SIZE_A)
-#define POS_B		(POS_C + SIZE_C)
-#define POS_Bx		POS_C
-#define POS_Ax		POS_A
+static constexpr int32_t POS_OP = 0;
+static constexpr int32_t POS_A = POS_OP + SIZE_OP;
+static constexpr int32_t POS_C = POS_A + SIZE_A;
+static constexpr int32_t POS_B = POS_C + SIZE_C;
+static constexpr int32_t POS_Bx = POS_C;
+static constexpr int32_t POS_Ax = POS_A;
 
 
 /*
@@ -54,15 +55,14 @@ enum OpMode : uint8_t {iABC, iABx, iAsBx, iAx};  /* basic instruction format */
 ** we use (signed) int to manipulate most arguments,
 ** so they must fit in LUAI_BITSINT-1 bits (-1 for sign)
 */
-#define MAXARG_Bx        ((1<<SIZE_Bx)-1)
-#define MAXARG_sBx        (MAXARG_Bx>>1)
+static constexpr int32_t MAXARG_Bx = (1 << SIZE_Bx) - 1;
+static constexpr int32_t MAXARG_sBx = MAXARG_Bx >> 1;
 
-#define MAXARG_Ax	((1<<SIZE_Ax)-1)
+static constexpr int32_t MAXARG_Ax = (1 << SIZE_Ax) - 1;
 
-
-#define MAXARG_A        ((1<<SIZE_A)-1)
-#define MAXARG_B        ((1<<SIZE_B)-1)
-#define MAXARG_C        ((1<<SIZE_C)-1)
+static constexpr int32_t MAXARG_A = (1 << SIZE_A) - 1;
+static constexpr int32_t MAXARG_B = (1 << SIZE_B) - 1;
+static constexpr int32_t MAXARG_C = (1 << SIZE_C) - 1;
 
 
 /* creates a mask with 'n' 1 bits at position 'p' */
@@ -269,7 +269,58 @@ enum OpArgMask : uint8_t
   OpArgK   /* argument is a constant or register/constant */
 };
 
-LUAI_DDEC const uint8_t luaP_opmodes[NUM_OPCODES];
+#define opmode(t,a,b,c,m) (((t)<<7) | ((a)<<6) | ((b)<<4) | ((c)<<2) | (m))
+
+LUAI_DDEF constexpr std::array<uint8_t, NUM_OPCODES> luaP_opmodes = {
+/*       T  A    B       C     mode		   opcode	*/
+  opmode(0, 1, OpArgR, OpArgN, iABC)		/* OP_MOVE */
+ ,opmode(0, 1, OpArgK, OpArgN, iABx)		/* OP_LOADK */
+ ,opmode(0, 1, OpArgN, OpArgN, iABx)		/* OP_LOADKX */
+ ,opmode(0, 1, OpArgU, OpArgU, iABC)		/* OP_LOADBOOL */
+ ,opmode(0, 1, OpArgU, OpArgN, iABC)		/* OP_LOADNIL */
+ ,opmode(0, 1, OpArgU, OpArgN, iABC)		/* OP_GETUPVAL */
+ ,opmode(0, 1, OpArgU, OpArgK, iABC)		/* OP_GETTABUP */
+ ,opmode(0, 1, OpArgR, OpArgK, iABC)		/* OP_GETTABLE */
+ ,opmode(0, 0, OpArgK, OpArgK, iABC)		/* OP_SETTABUP */
+ ,opmode(0, 0, OpArgU, OpArgN, iABC)		/* OP_SETUPVAL */
+ ,opmode(0, 0, OpArgK, OpArgK, iABC)		/* OP_SETTABLE */
+ ,opmode(0, 1, OpArgU, OpArgU, iABC)		/* OP_NEWTABLE */
+ ,opmode(0, 1, OpArgR, OpArgK, iABC)		/* OP_SELF */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_ADD */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_SUB */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_MUL */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_MOD */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_POW */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_DIV */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_IDIV */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_BAND */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_BOR */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_BXOR */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_SHL */
+ ,opmode(0, 1, OpArgK, OpArgK, iABC)		/* OP_SHR */
+ ,opmode(0, 1, OpArgR, OpArgN, iABC)		/* OP_UNM */
+ ,opmode(0, 1, OpArgR, OpArgN, iABC)		/* OP_BNOT */
+ ,opmode(0, 1, OpArgR, OpArgN, iABC)		/* OP_NOT */
+ ,opmode(0, 1, OpArgR, OpArgN, iABC)		/* OP_LEN */
+ ,opmode(0, 1, OpArgR, OpArgR, iABC)		/* OP_CONCAT */
+ ,opmode(0, 0, OpArgR, OpArgN, iAsBx)		/* OP_JMP */
+ ,opmode(1, 0, OpArgK, OpArgK, iABC)		/* OP_EQ */
+ ,opmode(1, 0, OpArgK, OpArgK, iABC)		/* OP_LT */
+ ,opmode(1, 0, OpArgK, OpArgK, iABC)		/* OP_LE */
+ ,opmode(1, 0, OpArgN, OpArgU, iABC)		/* OP_TEST */
+ ,opmode(1, 1, OpArgR, OpArgU, iABC)		/* OP_TESTSET */
+ ,opmode(0, 1, OpArgU, OpArgU, iABC)		/* OP_CALL */
+ ,opmode(0, 1, OpArgU, OpArgU, iABC)		/* OP_TAILCALL */
+ ,opmode(0, 0, OpArgU, OpArgN, iABC)		/* OP_RETURN */
+ ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_FORLOOP */
+ ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_FORPREP */
+ ,opmode(0, 0, OpArgN, OpArgU, iABC)		/* OP_TFORCALL */
+ ,opmode(0, 1, OpArgR, OpArgN, iAsBx)		/* OP_TFORLOOP */
+ ,opmode(0, 0, OpArgU, OpArgU, iABC)		/* OP_SETLIST */
+ ,opmode(0, 1, OpArgU, OpArgN, iABx)		/* OP_CLOSURE */
+ ,opmode(0, 1, OpArgU, OpArgN, iABC)		/* OP_VARARG */
+ ,opmode(0, 0, OpArgU, OpArgU, iAx)		  /* OP_EXTRAARG */
+};
 
 #define getOpMode(m)	(cast(OpMode, luaP_opmodes[m] & 3))
 #define getBMode(m)	(cast(OpArgMask, (luaP_opmodes[m] >> 4) & 3))
@@ -278,8 +329,56 @@ LUAI_DDEC const uint8_t luaP_opmodes[NUM_OPCODES];
 #define testTMode(m)	(luaP_opmodes[m] & (1 << 7))
 
 
-LUAI_DDEC const char *const luaP_opnames[NUM_OPCODES+1];  /* opcode names */
-
+LUAI_DDEF constexpr std::array<const char*, NUM_OPCODES+1> luaP_opnames = {
+  "MOVE",
+  "LOADK",
+  "LOADKX",
+  "LOADBOOL",
+  "LOADNIL",
+  "GETUPVAL",
+  "GETTABUP",
+  "GETTABLE",
+  "SETTABUP",
+  "SETUPVAL",
+  "SETTABLE",
+  "NEWTABLE",
+  "SELF",
+  "ADD",
+  "SUB",
+  "MUL",
+  "MOD",
+  "POW",
+  "DIV",
+  "IDIV",
+  "BAND",
+  "BOR",
+  "BXOR",
+  "SHL",
+  "SHR",
+  "UNM",
+  "BNOT",
+  "NOT",
+  "LEN",
+  "CONCAT",
+  "JMP",
+  "EQ",
+  "LT",
+  "LE",
+  "TEST",
+  "TESTSET",
+  "CALL",
+  "TAILCALL",
+  "RETURN",
+  "FORLOOP",
+  "FORPREP",
+  "TFORCALL",
+  "TFORLOOP",
+  "SETLIST",
+  "CLOSURE",
+  "VARARG",
+  "EXTRAARG",
+  nullptr
+};
 
 /* number of list items to accumulate before a SETLIST instruction */
-#define LFIELDS_PER_FLUSH	50
+static constexpr int32_t LFIELDS_PER_FLUSH = 50;

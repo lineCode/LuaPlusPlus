@@ -219,8 +219,10 @@ static void removevalues (FuncState *fs, int list) {
 ** values in 'reg'), other tests jump to 'dtarget'.
 */
 static void patchlistaux (FuncState *fs, int list, int vtarget, int reg,
-                          int dtarget) {
-  while (list != NO_JUMP) {
+                          int dtarget)
+{
+  while (list != NO_JUMP)
+  {
     int next = getjump(fs, list);
     if (patchtestreg(fs, list, reg))
       fixjump(fs, list, vtarget);
@@ -236,7 +238,8 @@ static void patchlistaux (FuncState *fs, int list, int vtarget, int reg,
 ** to current position with no values) and reset list of pending
 ** jumps
 */
-static void dischargejpc (FuncState *fs) {
+static void dischargejpc (FuncState *fs)
+{
   patchlistaux(fs, fs->jpc, fs->pc, NO_REG, fs->pc);
   fs->jpc = NO_JUMP;
 }
@@ -287,8 +290,9 @@ void luaK_patchclose (FuncState *fs, int list, int level) {
 ** Emit instruction 'i', checking for array sizes and saving also its
 ** line information. Return 'i' position.
 */
-static int luaK_code (FuncState *fs, Instruction i) {
-  Proto *f = fs->f;
+static int luaK_code (FuncState* fs, Instruction i)
+{
+  Proto* f = fs->f;
   dischargejpc(fs);  /* 'pc' will change */
   /* put new instruction in code array */
   LMem<Instruction>::luaM_growvector(fs->ls->L, f->code, fs->pc, f->sizecode, MAX_INT, "opcodes");

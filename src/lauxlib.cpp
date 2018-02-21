@@ -822,12 +822,15 @@ LUALIB_API lua_Integer luaL_len (lua_State *L, int idx) {
 }
 
 
-LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
-  if (luaL_callmeta(L, idx, "__tostring")) {  /* metafield? */
+LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len)
+{
+  if (luaL_callmeta(L, idx, "__tostring"))
+  { /* metafield? */
     if (!lua_isstring(L, -1))
       luaL_error(L, "'__tostring' must return a string");
   }
-  else {
+  else
+  {
     switch (lua_type(L, idx).asBasicStrict())
     {
       case LuaType::Basic::Number:
@@ -866,11 +869,12 @@ LUALIB_API const char *luaL_tolstring (lua_State *L, int idx, size_t *len) {
 ** function gets the 'nup' elements at the top as upvalues.
 ** Returns with only the table at the stack.
 */
-LUALIB_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup) {
+LUALIB_API void luaL_setfuncs (lua_State *L, const luaL_Reg *l, int nup)
+{
   luaL_checkstack(L, nup, "too many upvalues");
-  for (; l->name != nullptr; l++) {  /* fill the table with given functions */
-    int i;
-    for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+  for (; l->name != nullptr; l++)
+  { /* fill the table with given functions */
+    for (int i = 0; i < nup; i++)  /* copy upvalues to the top */
       lua_pushvalue(L, -nup);
     lua_pushcclosure(L, l->func, nup);  /* closure with those upvalues */
     lua_setfield(L, -(nup + 2), l->name);
@@ -903,10 +907,12 @@ LUALIB_API int luaL_getsubtable (lua_State *L, int idx, const char *fname)
 ** Leaves resulting module on the top.
 */
 LUALIB_API void luaL_requiref (lua_State *L, const char *modname,
-                               lua_CFunction openf, int glb) {
+                               lua_CFunction openf, int glb)
+{
   luaL_getsubtable(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
   lua_getfield(L, -1, modname);  /* LOADED[modname] */
-  if (!lua_toboolean(L, -1)) {  /* package not already loaded? */
+  if (!lua_toboolean(L, -1))
+  { /* package not already loaded? */
     lua_pop(L, 1);  /* remove field */
     lua_pushcfunction(L, openf);
     lua_pushstring(L, modname);  /* argument to open function */
@@ -915,7 +921,8 @@ LUALIB_API void luaL_requiref (lua_State *L, const char *modname,
     lua_setfield(L, -3, modname);  /* LOADED[modname] = module */
   }
   lua_remove(L, -2);  /* remove LOADED table */
-  if (glb) {
+  if (glb)
+  {
     lua_pushvalue(L, -1);  /* copy of module */
     lua_setglobal(L, modname);  /* _G[modname] = module */
   }
@@ -923,7 +930,8 @@ LUALIB_API void luaL_requiref (lua_State *L, const char *modname,
 
 
 LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
-                                                               const char *r) {
+                                                               const char *r)
+{
   const char *wild;
   size_t l = strlen(p);
   luaL_Buffer b;
@@ -938,13 +946,14 @@ LUALIB_API const char *luaL_gsub (lua_State *L, const char *s, const char *p,
   return lua_tostring(L, -1);
 }
 
-LUALIB_API void luaL_checkversion_ (lua_State *L, lua_Number ver, size_t sz) {
+LUALIB_API void luaL_checkversion_ (lua_State *L, lua_Number ver, size_t sz)
+{
   const lua_Number *v = lua_version(L);
   if (sz != LUAL_NUMSIZES)  /* check numeric types */
     luaL_error(L, "core and library have incompatible numeric types");
   if (v != lua_version(nullptr))
     luaL_error(L, "multiple Lua VMs detected");
-  else if (*v != ver)
+  if (*v != ver)
     luaL_error(L, "version mismatch: app. needs %f, Lua core provides %f",
                   (LUA_NUMBER)ver, (LUA_NUMBER)*v);
 }

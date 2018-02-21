@@ -344,9 +344,10 @@ struct UDataAlign
 /*
 ** Description of an upvalue for function prototypes
 */
-struct Upvaldesc {
-  TString *name;  /* upvalue name (for debug information) */
-  uint8_t instack;  /* whether it is in stack (register) */
+struct Upvaldesc
+{
+  TString* name;  /* upvalue name (for debug information) */
+  bool instack;  /* whether it is in stack (register) */
   uint8_t idx;  /* index of upvalue (in stack or in outer function's list) */
 };
 
@@ -355,8 +356,9 @@ struct Upvaldesc {
 ** Description of a local variable for function prototypes
 ** (used for debug information)
 */
-struct LocVar {
-  TString *varname;
+struct LocVar
+{
+  TString* varname;
   int startpc;  /* first point where variable is active */
   int endpc;    /* first point where variable is dead */
 };
@@ -387,15 +389,15 @@ public:
   int sizelocvars;
   int linedefined;  /* debug information  */
   int lastlinedefined;  /* debug information  */
-  TValue *k;  /* constants used by the function */
-  Instruction *code;  /* opcodes */
-  Proto **p;  /* functions defined inside the function */
-  int *lineinfo;  /* map from opcodes to source lines (debug information) */
-  LocVar *locvars;  /* information about local variables (debug information) */
-  Upvaldesc *upvalues;  /* upvalue information */
-  class LClosure *cache;  /* last-created closure with this prototype */
-  TString  *source;  /* used for debug information */
-  GCObject *gclist;
+  TValue*  k;  /* constants used by the function */
+  Instruction* code;  /* opcodes */
+  Proto** p;  /* functions defined inside the function */
+  int* lineinfo;  /* map from opcodes to source lines (debug information) */
+  LocVar* locvars;  /* information about local variables (debug information) */
+  Upvaldesc* upvalues;  /* upvalue information */
+  class LClosure* cache;  /* last-created closure with this prototype */
+  TString* source;  /* used for debug information */
+  GCObject* gclist;
 };
 
 

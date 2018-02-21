@@ -25,27 +25,23 @@ using l_mem = ptrdiff_t;
 
 
 /* maximum value for size_t */
-#define MAX_SIZET	((size_t)(~(size_t)0))
+static constexpr size_t MAX_SIZET = std::numeric_limits<size_t>::max();
 
-/* maximum size visible for Lua (must be representable in a lua_Integer */
-#define MAX_SIZE	(sizeof(size_t) < sizeof(lua_Integer) ? MAX_SIZET \
-                          : (size_t)(LUA_MAXINTEGER))
+// maximum size visible for Lua (must be representable in a lua_Integer
+static constexpr size_t MAX_SIZE = sizeof(size_t) < sizeof(lua_Integer) ? MAX_SIZET : static_cast<size_t>(LUA_MAXINTEGER);
 
+static constexpr lu_mem MAX_LUMEM = std::numeric_limits<lu_mem>::max();
+static constexpr l_mem MAX_LMEM = std::numeric_limits<l_mem>::max();
 
-#define MAX_LUMEM	((lu_mem)(~(lu_mem)0))
-
-#define MAX_LMEM	((l_mem)(MAX_LUMEM >> 1))
-
-
-#define MAX_INT		INT_MAX  /* maximum value of an int */
-
+// maximum value of an int32_t
+static constexpr int32_t MAX_INT = std::numeric_limits<int32_t>::max();
 
 /*
 ** conversion of pointer to uint32_t:
 ** this is for hashing only; there is no problem if the integer
 ** cannot hold the whole pointer value
 */
-#define point2uint(p)	((uint32_t)((size_t)(p) & UINT_MAX))
+#define point2uint(p)	((uint32_t)((size_t)(p) & std::numeric_limits<uint32_t>::max()))
 
 
 
