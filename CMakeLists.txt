@@ -45,6 +45,7 @@ set(SOURCE_FILES
         src/ltable.cpp
         src/ltablib.cpp
         src/ltm.cpp
+        src/ltype.cpp
         src/lua.cpp
         src/lundump.cpp
         src/lutf8lib.cpp
