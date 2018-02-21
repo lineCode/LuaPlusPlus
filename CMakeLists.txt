@@ -53,6 +53,14 @@ set(SOURCE_FILES
         src/lzio.cpp
         )
 
+set(TEST_SOURCE_FILES
+        tests/LuaPrinter.cpp
+        tests/Main.cpp
+        tests/StringUtil.cpp
+        tests/TestBasicPrint.cpp
+        tests/TestCommon.cpp
+        )
+
 ### INCLUDES ###
 
 include_directories(src)
@@ -168,3 +176,7 @@ add_subdirectory(libraries)
 # )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
+
+add_executable(${PROJECT_NAME}_test EXCLUDE_FROM_ALL ${TEST_SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME} UnitTest++)
+target_include_directories(${PROJECT_NAME}_test PRIVATE tests)
