@@ -7,11 +7,10 @@
 
 #include <lobject.hpp>
 
-
 /*
-* WARNING: if you change the order of this enumeration,
-* grep "ORDER TM" and "ORDER OP"
-*/
+ * WARNING: if you change the order of this enumeration,
+ * grep "ORDER TM" and "ORDER OP"
+ */
 enum TMS : uint8_t
 {
   TM_INDEX,
@@ -38,28 +37,26 @@ enum TMS : uint8_t
   TM_LE,
   TM_CONCAT,
   TM_CALL,
-  TM_N		/* number of elements in the enum */
+  TM_N          /* number of elements in the enum */
 };
 
+#define gfasttm(g, et, e) ((et) == NULL ? NULL : \
+                           ((et)->flags & (1u<<(e))) ? NULL : luaT_gettm(et, e, (g)->tmname[e]))
 
+#define fasttm(l, et, e)  gfasttm(l->globalState, et, e)
 
-#define gfasttm(g,et,e) ((et) == NULL ? NULL : \
-  ((et)->flags & (1u<<(e))) ? NULL : luaT_gettm(et, e, (g)->tmname[e]))
+LUAI_FUNC const char *luaT_objtypename(lua_State *L, const TValue *o);
 
-#define fasttm(l,et,e)	gfasttm(l->globalState, et, e)
+LUAI_FUNC const TValue *luaT_gettm(Table *events, TMS event, TString *ename);
+LUAI_FUNC const TValue *luaT_gettmbyobj(lua_State *L, const TValue *o,
+                                        TMS event);
+LUAI_FUNC void luaT_init(lua_State *L);
 
-LUAI_FUNC const char *luaT_objtypename (lua_State *L, const TValue *o);
-
-LUAI_FUNC const TValue *luaT_gettm (Table *events, TMS event, TString *ename);
-LUAI_FUNC const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o,
-                                                       TMS event);
-LUAI_FUNC void luaT_init (lua_State *L);
-
-LUAI_FUNC void luaT_callTM (lua_State *L, const TValue *f, const TValue *p1,
-                            const TValue *p2, TValue *p3, int hasres);
-LUAI_FUNC int luaT_callbinTM (lua_State *L, const TValue *p1, const TValue *p2,
-                              StkId res, TMS event);
-LUAI_FUNC void luaT_trybinTM (lua_State *L, const TValue *p1, const TValue *p2,
-                              StkId res, TMS event);
-LUAI_FUNC int luaT_callorderTM (lua_State *L, const TValue *p1,
-                                const TValue *p2, TMS event);
+LUAI_FUNC void luaT_callTM(lua_State *L, const TValue *f, const TValue *p1,
+                           const TValue *p2, TValue *p3, int hasres);
+LUAI_FUNC int luaT_callbinTM(lua_State *L, const TValue *p1, const TValue *p2,
+                             StkId res, TMS event);
+LUAI_FUNC void luaT_trybinTM(lua_State *L, const TValue *p1, const TValue *p2,
+                             StkId res, TMS event);
+LUAI_FUNC int luaT_callorderTM(lua_State *L, const TValue *p1,
+                               const TValue *p2, TMS event);

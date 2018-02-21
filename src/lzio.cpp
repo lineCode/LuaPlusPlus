@@ -9,7 +9,6 @@
 
 #include <lprefix.hpp>
 
-
 #include <cstring>
 
 #include <lua.hpp>
@@ -18,8 +17,7 @@
 #include <lstate.hpp>
 #include <lzio.hpp>
 
-
-int luaZ_fill (ZIO& z)
+int luaZ_fill(ZIO& z)
 {
   size_t size;
   lua_State *L = z.L;
@@ -34,8 +32,7 @@ int luaZ_fill (ZIO& z)
   return cast_uchar(*(z.p++));
 }
 
-
-void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader, void *data) {
+void luaZ_init(lua_State *L, ZIO *z, lua_Reader reader, void *data) {
   z->L = L;
   z->reader = reader;
   z->data = data;
@@ -43,16 +40,18 @@ void luaZ_init (lua_State *L, ZIO *z, lua_Reader reader, void *data) {
   z->p = nullptr;
 }
 
-
 /* --------------------------------------------------------------- read --- */
-size_t luaZ_read (ZIO& z, void* b, size_t n)
+size_t luaZ_read(ZIO& z, void* b, size_t n)
 {
-  while (n) {
+  while (n)
+  {
     size_t m;
-    if (z.n == 0) {  /* no bytes in buffer? */
-      if (luaZ_fill(z) == EOZ)  /* try to read more */
-        return n;  /* no more input; return number of missing bytes */
-      else {
+    if (z.n == 0)    /* no bytes in buffer? */
+    {
+      if (luaZ_fill(z) == EOZ) /* try to read more */
+        return n; /* no more input; return number of missing bytes */
+      else
+      {
         z.n++;  /* luaZ_fill consumed first byte; put it back */
         z.p--;
       }
@@ -66,4 +65,3 @@ size_t luaZ_read (ZIO& z, void* b, size_t n)
   }
   return 0;
 }
-

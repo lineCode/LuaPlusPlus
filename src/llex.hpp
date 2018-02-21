@@ -8,19 +8,16 @@
 #include <lobject.hpp>
 #include <lzio.hpp>
 
-
-#define FIRST_RESERVED	257
-
+#define FIRST_RESERVED  257
 
 #if !defined(LUA_ENV)
-#define LUA_ENV		"_ENV"
+#define LUA_ENV         "_ENV"
 #endif
 
-
 /*
-* WARNING: if you change the order of this enumeration,
-* grep "ORDER RESERVED"
-*/
+ * WARNING: if you change the order of this enumeration,
+ * grep "ORDER RESERVED"
+ */
 enum RESERVED : uint16_t
 {
   /* terminal symbols denoted by reserved words */
@@ -36,8 +33,7 @@ enum RESERVED : uint16_t
 };
 
 /* number of reserved words */
-#define NUM_RESERVED	(cast(int, TK_WHILE-FIRST_RESERVED+1))
-
+#define NUM_RESERVED    (cast(int, TK_WHILE-FIRST_RESERVED+1))
 
 union SemInfo
 {
@@ -46,13 +42,11 @@ union SemInfo
   TString *ts;
 };  /* semantics information */
 
-
 struct Token
 {
   int token;
   SemInfo seminfo;
 };
-
 
 /* state of the lexer plus state of the parser when shared by all
    functions */
@@ -75,11 +69,10 @@ struct LexState
   TString* envn = nullptr;  /* environment variable name */
 };
 
-
-LUAI_FUNC void luaX_init (lua_State *L);
-LUAI_FUNC void luaX_setinput (lua_State *L, LexState *ls, TString *source, int firstchar);
-LUAI_FUNC TString *luaX_newstring (LexState *ls, const char *str, size_t l);
-LUAI_FUNC void luaX_next (LexState *ls);
-LUAI_FUNC int luaX_lookahead (LexState *ls);
-LUAI_FUNC void luaX_syntaxerror (LexState *ls, const char *s);
-LUAI_FUNC const char *luaX_token2str (LexState *ls, int token);
+LUAI_FUNC void luaX_init(lua_State *L);
+LUAI_FUNC void luaX_setinput(lua_State *L, LexState *ls, TString *source, int firstchar);
+LUAI_FUNC TString *luaX_newstring(LexState *ls, const char *str, size_t l);
+LUAI_FUNC void luaX_next(LexState *ls);
+LUAI_FUNC int luaX_lookahead(LexState *ls);
+LUAI_FUNC void luaX_syntaxerror(LexState *ls, const char *s);
+LUAI_FUNC const char *luaX_token2str(LexState *ls, int token);

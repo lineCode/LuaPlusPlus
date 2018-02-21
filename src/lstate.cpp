@@ -25,15 +25,13 @@
 #include <ltm.hpp>
 #include <lauxlib.hpp>
 
-
 #if !defined(LUAI_GCPAUSE)
-#define LUAI_GCPAUSE	200  /* 200% */
+#define LUAI_GCPAUSE    200  /* 200% */
 #endif
 
 #if !defined(LUAI_GCMUL)
-#define LUAI_GCMUL	200 /* GC runs 'twice the speed' of memory allocation */
+#define LUAI_GCMUL      200 /* GC runs 'twice the speed' of memory allocation */
 #endif
-
 
 /*
 ** a macro to help the creation of a unique random seed when a state is
@@ -41,7 +39,7 @@
 */
 #if !defined(luai_makeseed)
 #include <time.h>
-#define luai_makeseed()		cast(uint32_t, time(NULL))
+#define luai_makeseed()         cast(uint32_t, time(NULL))
 #endif
 
 /*
@@ -56,11 +54,11 @@ static uint32_t makeseed(lua_State* L)
   int p = 0;
 
   auto addBuff = [](auto& b, auto& p, const auto& e)
-  {
-    size_t t = reinterpret_cast<size_t>(e);
-    memcpy(b + p, &t, sizeof(t));
-    p += sizeof(t);
-  };
+                 {
+                   size_t t = reinterpret_cast<size_t>(e);
+                   memcpy(b + p, &t, sizeof(t));
+                   p += sizeof(t);
+                 };
 
   addBuff(buff, p, L);  /* heap variable */
   addBuff(buff, p, &h);  /* local variable */
@@ -70,21 +68,20 @@ static uint32_t makeseed(lua_State* L)
   return luaS_hash(buff, p, h);
 }
 
-void freestack (lua_State *L)
+void freestack(lua_State *L)
 {
   if (L->stack == nullptr)
-    return;  /* stack not completely built yet */
+    return; /* stack not completely built yet */
   L->ci = &L->base_ci;  /* free the entire 'ci' list */
   luaE_freeCI(L);
   lua_assert(L->nci == 0);
   LMem<TValue>::luaM_freearray(L, L->stack, L->stacksize);  /* free stack array */
 }
 
-
 /*
 ** Create registry table and its predefined values
 */
-static void init_registry (lua_State *L, global_State *g) {
+static void init_registry(lua_State *L, global_State *g) {
   TValue temp;
   /* create registry */
   Table *registry = luaH_new(L);
@@ -98,14 +95,14 @@ static void init_registry (lua_State *L, global_State *g) {
   luaH_setint(L, registry, LUA_RIDX_GLOBALS, &temp);
 }
 
-static void stack_init (lua_State *L1, lua_State *L)
+static void stack_init(lua_State *L1, lua_State *L)
 {
   int i; CallInfo *ci;
   /* initialize stack array */
   L1->stack = LMem<TValue>::luaM_newvector(L, BASIC_STACK_SIZE);
   L1->stacksize = BASIC_STACK_SIZE;
   for (i = 0; i < BASIC_STACK_SIZE; i++)
-    setnilvalue(L1->stack + i);  /* erase new stack */
+    setnilvalue(L1->stack + i); /* erase new stack */
   L1->top = L1->stack;
   L1->stack_last = L1->stack + L1->stacksize - EXTRA_STACK;
   /* initialize first ci */
@@ -122,7 +119,7 @@ static void stack_init (lua_State *L1, lua_State *L)
 ** open parts of the state that may cause memory-allocation errors.
 ** ('g->version' != NULL flags that the state was completely build)
 */
-static void f_luaopen (lua_State *L, void *ud)
+static void f_luaopen(lua_State *L, void *ud)
 {
   global_State *g = L->globalState;
   UNUSED(ud);
@@ -136,12 +133,11 @@ static void f_luaopen (lua_State *L, void *ud)
   luai_userstateopen(L);
 }
 
-
 /*
 ** preinitialize a thread with consistent values without allocating
 ** any memory (to avoid errors)
 */
-static void preinit_thread (lua_State *L, global_State *g)
+static void preinit_thread(lua_State *L, global_State *g)
 {
   L->globalState = g;
   L->stack = nullptr;
@@ -162,10 +158,10 @@ static void preinit_thread (lua_State *L, global_State *g)
   L->errfunc = 0;
 }
 
-static int panic (lua_State *L)
+static int panic(lua_State *L)
 {
   lua_writestringerror("PANIC: unprotected error in call to Lua API (%s)\n",
-                        lua_tostring(L, -1));
+                       lua_tostring(L, -1));
   return 0;  /* return to Lua to abort */
 }
 
@@ -230,7 +226,7 @@ lua_State::~lua_State()
     global_State *g = this->globalState;
     luaF_close(this, this->stack);  /* close all upvalues for this thread */
     luaC_freeallobjects(this);  /* collect all objects */
-    if (g->version)  /* closing a fully built state? */
+    if (g->version) /* closing a fully built state? */
       luai_userstateclose(this);
     LMem<TString*>::luaM_freearray(this, this->globalState->strt.hash, this->globalState->strt.size);
     freestack(this);
@@ -254,17 +250,16 @@ lua_State::~lua_State()
 ** set GCdebt to a new value keeping the value (totalbytes + GCdebt)
 ** invariant (and avoiding underflows in 'totalbytes')
 */
-void luaE_setdebt (global_State *g, l_mem debt) {
+void luaE_setdebt(global_State *g, l_mem debt) {
   l_mem tb = g->getTotalBytes();
   lua_assert(tb > 0);
   if (debt < tb - MAX_LMEM)
-    debt = tb - MAX_LMEM;  /* will make 'totalbytes == MAX_LMEM' */
+    debt = tb - MAX_LMEM; /* will make 'totalbytes == MAX_LMEM' */
   g->totalbytes = tb - debt;
   g->GCdebt = debt;
 }
 
-
-CallInfo *luaE_extendCI (lua_State *L) {
+CallInfo *luaE_extendCI(lua_State *L) {
   CallInfo *ci = LMem<CallInfo>::luaM_new(L);
   lua_assert(L->ci->next == NULL);
   L->ci->next = ci;
@@ -274,30 +269,30 @@ CallInfo *luaE_extendCI (lua_State *L) {
   return ci;
 }
 
-
 /*
 ** free all CallInfo structures not in use by a thread
 */
-void luaE_freeCI (lua_State *L) {
+void luaE_freeCI(lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next = ci->next;
   ci->next = nullptr;
-  while ((ci = next) != nullptr) {
+  while ((ci = next) != nullptr)
+  {
     next = ci->next;
     LMem<CallInfo>::luaM_free(L, ci);
     L->nci--;
   }
 }
 
-
 /*
 ** free half of the CallInfo structures not in use by a thread
 */
-void luaE_shrinkCI (lua_State *L) {
+void luaE_shrinkCI(lua_State *L) {
   CallInfo *ci = L->ci;
   CallInfo *next2;  /* next's next */
   /* while there are two nexts */
-  while (ci->next != nullptr && (next2 = ci->next->next) != nullptr) {
+  while (ci->next != nullptr && (next2 = ci->next->next) != nullptr)
+  {
     LMem<CallInfo>::luaM_free(L, ci->next);  /* free next */
     L->nci--;
     ci->next = next2;  /* remove 'next' from the list */
@@ -306,7 +301,7 @@ void luaE_shrinkCI (lua_State *L) {
   }
 }
 
-LUA_API lua_State *lua_newthread (lua_State *L)
+LUA_API lua_State *lua_newthread(lua_State *L)
 {
   return new lua_State(L);
 }

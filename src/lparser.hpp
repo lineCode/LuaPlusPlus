@@ -9,7 +9,6 @@
 #include <lobject.hpp>
 #include <lzio.hpp>
 
-
 /*
 ** Expression and variable descriptor.
 ** Code generation for variables and expressions can be delayed to allow
@@ -23,7 +22,7 @@
 enum ExpType : uint8_t
 {
   VVOID,  /* when 'expdesc' describes the last expression a list,
-            this kind means an empty list (so, no expression) */
+             this kind means an empty list (so, no expression) */
   VNIL,  /* constant nil */
   VTRUE,  /* constant true */
   VFALSE,  /* constant false */
@@ -31,49 +30,47 @@ enum ExpType : uint8_t
   VKFLT,  /* floating constant; nval = numerical float value */
   VKINT,  /* integer constant; nval = numerical integer value */
   VNONRELOC,  /* expression has its value in a fixed register;
-                info = result register */
+                 info = result register */
   VLOCAL,  /* local variable; info = local register */
   VUPVAL,  /* upvalue variable; info = index of upvalue in 'upvalues' */
   VINDEXED,  /* indexed variable;
-               ind.vt = whether 't' is register or upvalue;
-               ind.t = table register or upvalue;
-               ind.idx = key's R/K index */
+                ind.vt = whether 't' is register or upvalue;
+                ind.t = table register or upvalue;
+                ind.idx = key's R/K index */
   VJMP,  /* expression is a test/comparison;
-           info = pc of corresponding jump instruction */
+            info = pc of corresponding jump instruction */
   VRELOCABLE,  /* expression can put result in any register;
-                 info = instruction pc */
+                  info = instruction pc */
   VCALL,  /* expression is a function call; info = instruction pc */
   VVARARG  /* vararg expression; info = instruction pc */
 };
 
-
-#define vkisvar(k)	(VLOCAL <= (k) && (k) <= VINDEXED)
-#define vkisinreg(k)	((k) == VNONRELOC || (k) == VLOCAL)
+#define vkisvar(k)      (VLOCAL <= (k) && (k) <= VINDEXED)
+#define vkisinreg(k)    ((k) == VNONRELOC || (k) == VLOCAL)
 
 struct ExpressionDescription
 {
   ExpType k;
-  union {
+  union
+  {
     lua_Integer ival;    /* for VKINT */
     lua_Number nval;  /* for VKFLT */
     int info;  /* for generic use */
-    struct {  /* for indexed variables (VINDEXED) */
-      short idx;  /* index (R/K) */
-      uint8_t t;  /* table (register or upvalue) */
-      uint8_t vt;  /* whether 't' is register (VLOCAL) or upvalue (VUPVAL) */
+    struct    /* for indexed variables (VINDEXED) */
+    {short idx;  /* index (R/K) */
+     uint8_t t;  /* table (register or upvalue) */
+     uint8_t vt;  /* whether 't' is register (VLOCAL) or upvalue (VUPVAL) */
     } ind;
   } u;
   int patch1;  /* patch list of 'exit when true' */
   int patch2;  /* patch list of 'exit when false' */
 };
 
-
 /* description of active local variable */
 struct Vardesc
 {
   short idx;  /* variable index in stack */
 };
-
 
 /* description of pending goto statements and label statements */
 struct LabelDescription
@@ -84,7 +81,6 @@ struct LabelDescription
   uint8_t nactvar;  /* local level where it appears in current block */
 };
 
-
 /* list of labels or gotos */
 struct Labellist
 {
@@ -92,7 +88,6 @@ struct Labellist
   int n = 0;  /* number of entries in use */
   int size = 0;  /* array size */
 };
-
 
 /* dynamic structures used by the parser */
 struct Dyndata
@@ -107,10 +102,8 @@ struct Dyndata
   Labellist label;   /* list of active labels */
 };
 
-
 /* control of blocks */
 struct BlockCnt;  /* defined in lparser.c */
-
 
 /* state needed to generate code for a given function */
 struct FuncState
@@ -131,6 +124,5 @@ struct FuncState
   uint8_t freereg;  /* first free register */
 };
 
-
-LUAI_FUNC LClosure *luaY_parser (lua_State *L, ZIO& z, Mbuffer& buff,
-                                 Dyndata& dyd, const char *name, int firstchar);
+LUAI_FUNC LClosure *luaY_parser(lua_State *L, ZIO& z, Mbuffer& buff,
+                                Dyndata& dyd, const char *name, int firstchar);

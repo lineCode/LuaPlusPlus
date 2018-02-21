@@ -105,14 +105,15 @@ public:
     int32_t newsize;
     if (size >= limit / 2)
     { // cannot double it?
-      if (size >= limit)  // cannot grow even a little?
+      if (size >= limit) // cannot grow even a little?
         luaM_tooMany(L, what, limit);
       newsize = limit;  // still have at least one free place
     }
-    else {
+    else
+    {
       newsize = (size)*2;
       if (newsize < MINARRAYSIZE)
-        newsize = MINARRAYSIZE;  /* minimum size */
+        newsize = MINARRAYSIZE; /* minimum size */
     }
     T* newblock = luaM_reallocv(L, block, size, newsize, sizeof(T));
     size = newsize;  /* update only when everything else is OK */

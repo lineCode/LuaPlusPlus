@@ -12,7 +12,7 @@ public:
       LuaAllocator::free(ptr);
       return nullptr;
     }
-  
+
     return static_cast<T*>(::realloc(ptr, nsize));
   }
 

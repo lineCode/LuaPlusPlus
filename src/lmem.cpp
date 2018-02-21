@@ -9,7 +9,6 @@
 
 #include <lprefix.hpp>
 
-
 #include <cstddef>
 
 #include <lua.hpp>
@@ -19,8 +18,6 @@
 #include <lmem.hpp>
 #include <lobject.hpp>
 #include <lstate.hpp>
-
-
 
 /*
 ** About the realloc function:
@@ -39,8 +36,7 @@
 ** (any reallocation to an equal or smaller size cannot fail!)
 */
 
-
-void luaM_toobig (lua_State *L)
+void luaM_toobig(lua_State *L)
 {
   luaG_runerror(L, "memory allocation error: block too big");
 }

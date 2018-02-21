@@ -13,19 +13,18 @@
 
 /*
 
-** Some notes about garbage-collected objects: All objects in Lua must
-** be kept somehow accessible until being freed, so all objects always
-** belong to one (and only one) of these lists, using field 'next' of
-** the 'CommonHeader' for the link:
-**
-** 'allgc': all objects not marked for finalization;
-** 'finobj': all objects marked for finalization;
-** 'tobefnz': all objects ready to be finalized;
-** 'fixedgc': all objects that are not to be collected (currently
-** only small strings, such as reserved words).
+ ** Some notes about garbage-collected objects: All objects in Lua must
+ ** be kept somehow accessible until being freed, so all objects always
+ ** belong to one (and only one) of these lists, using field 'next' of
+ ** the 'CommonHeader' for the link:
+ **
+ ** 'allgc': all objects not marked for finalization;
+ ** 'finobj': all objects marked for finalization;
+ ** 'tobefnz': all objects ready to be finalized;
+ ** 'fixedgc': all objects that are not to be collected (currently
+ ** only small strings, such as reserved words).
 
-*/
-
+ */
 
 /*
 ** Atomic type (relative to signals) to better ensure that 'lua_sethook'
@@ -33,20 +32,17 @@
 */
 #if !defined(l_signalT)
 #include <csignal>
-#define l_signalT	sig_atomic_t
+#define l_signalT       sig_atomic_t
 #endif
-
 
 /* extra stack space to handle TM calls and some other extras */
 #define EXTRA_STACK   5
 
-
 #define BASIC_STACK_SIZE        (2*LUA_MINSTACK)
 
-
 /* kinds of Garbage Collection */
-#define KGC_NORMAL	0
-#define KGC_EMERGENCY	1	/* gc was forced by an allocation failure */
+#define KGC_NORMAL      0
+#define KGC_EMERGENCY   1       /* gc was forced by an allocation failure */
 
 /*
 ** Information about a call.
@@ -60,7 +56,7 @@
 struct CallInfo
 {
   StkId func;  /* function index in the stack */
-  StkId	top;  /* top for this function */
+  StkId top;  /* top for this function */
   struct CallInfo *previous, *next;  /* dynamic call link */
   union
   {
@@ -81,26 +77,25 @@ struct CallInfo
   unsigned short callstatus;
 };
 
-
 /*
 ** Bits in CallInfo status
 */
-#define CIST_OAH	(1<<0)	/* original value of 'allowhook' */
-#define CIST_LUA	(1<<1)	/* call is running a Lua function */
-#define CIST_HOOKED	(1<<2)	/* call is running a debug hook */
-#define CIST_FRESH	(1<<3)	/* call is running on a fresh invocation
+#define CIST_OAH        (1<<0)  /* original value of 'allowhook' */
+#define CIST_LUA        (1<<1)  /* call is running a Lua function */
+#define CIST_HOOKED     (1<<2)  /* call is running a debug hook */
+#define CIST_FRESH      (1<<3)  /* call is running on a fresh invocation
                                    of luaV_execute */
-#define CIST_YPCALL	(1<<4)	/* call is a yieldable protected call */
-#define CIST_TAIL	(1<<5)	/* call was tail called */
-#define CIST_HOOKYIELD	(1<<6)	/* last hook called yielded */
-#define CIST_LEQ	(1<<7)  /* using __lt for __le */
-#define CIST_FIN	(1<<8)  /* call is running a finalizer */
+#define CIST_YPCALL     (1<<4)  /* call is a yieldable protected call */
+#define CIST_TAIL       (1<<5)  /* call was tail called */
+#define CIST_HOOKYIELD  (1<<6)  /* last hook called yielded */
+#define CIST_LEQ        (1<<7)  /* using __lt for __le */
+#define CIST_FIN        (1<<8)  /* call is running a finalizer */
 
-#define isLua(ci)	((ci)->callstatus & CIST_LUA)
+#define isLua(ci)       ((ci)->callstatus & CIST_LUA)
 
 /* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
-#define setoah(st,v)	((st) = ((st) & ~CIST_OAH) | (v))
-#define getoah(st)	((st) & CIST_OAH)
+#define setoah(st, v)    ((st) = ((st) & ~CIST_OAH) | (v))
+#define getoah(st)      ((st) & CIST_OAH)
 
 struct Stringtable
 {
@@ -199,13 +194,12 @@ public:
 #define gco2p(o)  check_exp((o)->type == LuaType::Variant::FunctionPrototype, static_cast<Proto*>(o))
 #define gco2th(o)  check_exp((o)->type == LuaType::Variant::Thread, static_cast<lua_State*>(o))
 
-
 /* macro to convert a Lua object into a GCObject */
 #define obj2gco(v) \
-	check_exp(LuaType::DataType(novariant((v)->type)) < LuaType::DataType(LuaType::Variant::DeadKey), (static_cast<GCObject*>(v)))
+  check_exp(LuaType::DataType(novariant((v)->type)) < LuaType::DataType(LuaType::Variant::DeadKey), (static_cast<GCObject*>(v)))
 
-LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
-LUAI_FUNC CallInfo *luaE_extendCI (lua_State *L);
-LUAI_FUNC void luaE_freeCI (lua_State *L);
-LUAI_FUNC void luaE_shrinkCI (lua_State *L);
-LUAI_FUNC void freestack (lua_State* L);
+LUAI_FUNC void luaE_setdebt(global_State *g, l_mem debt);
+LUAI_FUNC CallInfo *luaE_extendCI(lua_State *L);
+LUAI_FUNC void luaE_freeCI(lua_State *L);
+LUAI_FUNC void luaE_shrinkCI(lua_State *L);
+LUAI_FUNC void freestack(lua_State* L);
