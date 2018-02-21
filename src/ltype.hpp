@@ -70,7 +70,7 @@ public:
   constexpr LuaType(Basic value)
     : value(DataType(value))
   {}
-  constexpr LuaType::LuaType(Variant value)
+  constexpr LuaType(Variant value)
     : value(DataType(value))
   {}
 

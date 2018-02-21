@@ -3,6 +3,7 @@
 #include <lauxlib.hpp>
 #include <lua.hpp>
 #include <map>
+#include <string>
 #include <stdexcept>
 
 /** Helper class to register instance methods as callbacks to lua. */
@@ -55,7 +56,7 @@ public:
   static void registerHandler(FuncWrapperMap& map, std::string&& name, PtFunc method)
   {
     if (map.find(name) != map.end())
-      throw std::runtime_error("Handler (" + name + ") registered twice.");
+      throw std::runtime_error(std::string { "Handler (" } + name + ") registered twice.");
     map[std::move(name)] = FuncWrapper(method);
   }
 
