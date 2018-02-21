@@ -1,3 +1,5 @@
 vs2017/
 fastbuild/fbuild.fdb
 bin/
+cmake-build-*
+.idea/
