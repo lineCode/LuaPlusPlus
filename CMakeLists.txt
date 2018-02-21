@@ -90,14 +90,14 @@ add_compile_options(
 
         -Wdelete-incomplete
 
-        -Wshadow
+#        -Wshadow
         -Wsign-compare
         -Wundef
         -Wwrite-strings
         -Wredundant-decls
         -Wdisabled-optimization
         -Waggregate-return
-        -Wdouble-promotion
+#        -Wdouble-promotion
 )
 
 
